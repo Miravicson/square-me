@@ -14,21 +14,21 @@ export interface AuthenticateRequest {
   token: string;
 }
 
-export interface User {
-  id: number;
+export interface GrpcUser {
+  id: string;
   email: string;
 }
 
 export const AUTH_PACKAGE_NAME = 'auth';
 
 export interface AuthServiceClient {
-  authenticate(request: AuthenticateRequest): Observable<User>;
+  authenticate(request: AuthenticateRequest): Observable<GrpcUser>;
 }
 
 export interface AuthServiceController {
   authenticate(
     request: AuthenticateRequest
-  ): Promise<User> | Observable<User> | User;
+  ): Promise<GrpcUser> | Observable<GrpcUser> | GrpcUser;
 }
 
 export function AuthServiceControllerMethods() {

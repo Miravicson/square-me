@@ -69,8 +69,6 @@ export const nestGlobalProvidersPlug: Plug = (app) => {
     type: VersioningType.URI,
     defaultVersion: VERSION_NEUTRAL,
   });
-  // enable DI for class-validator
-  // useContainer(app.select(AppModule), { fallbackOnErrors: true });
   return app;
 };
 
