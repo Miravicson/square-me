@@ -15,7 +15,8 @@
         "development": {
           "args": ["node-env=development"]
         }
-      }
+      },
+      "dependsOn": ["^build"]
     },
     "serve": {
       "continuous": true,

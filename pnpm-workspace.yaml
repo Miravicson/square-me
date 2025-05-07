@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - libs/*
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@scarf/scarf'
+  - argon2
+  - esbuild
+  - prisma
+  - protobufjs
+  - pulsar-client

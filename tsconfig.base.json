@@ -14,7 +14,11 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@square-me/grpc": ["libs/grpc/src/index.ts"],
+      "@square-me/nestjs": ["libs/nestjs/src/index.ts"],
+      "@square-me/rabbit-mq": ["libs/rabbit-mq/src/index.ts"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }
