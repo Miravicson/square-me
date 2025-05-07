@@ -4,10 +4,10 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { CookieOptions, Response } from 'express';
-import { LoginInputDto } from './dto/login-input.do';
 import { verify } from 'argon2';
-import { AuthCookieName, AuthCookieKey } from './constants';
+
 import { UserEntity } from '../users/entities/user.entity';
+import { AuthCookieKey } from '@square-me/auth-service';
 
 interface SetJWTCookieOptions {
   key: string;

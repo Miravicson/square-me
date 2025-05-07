@@ -10,3 +10,13 @@ export function fromCookieAsJwt(cookieKey): JwtFromRequestFunction {
     return accessToken;
   };
 }
+
+export function fromGRPC(): JwtFromRequestFunction {
+  return (req: Request & { token: string }) => {
+    let accessToken: string | null = null;
+    if (req && req.token) {
+      accessToken = req.token;
+    }
+    return accessToken;
+  };
+}

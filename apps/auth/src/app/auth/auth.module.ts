@@ -5,9 +5,13 @@ import { UsersModule } from '../users/users.module';
 import { AuthGrpcController } from './auth.grpc.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { LocalStrategy } from './strategies/local.strategy';
+import { LoggerModule } from '@square-me/nestjs';
 
 @Module({
   imports: [
+    LoggerModule,
     UsersModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -23,7 +27,7 @@ import { JwtModule } from '@nestjs/jwt';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy, LocalStrategy],
   controllers: [AuthController, AuthGrpcController],
 })
 export class AuthModule {}

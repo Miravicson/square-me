@@ -4,7 +4,6 @@ export const AuthStrategyName = {
   LOCAL: 'local',
   JWT_REFRESH: 'jwt-refresh',
 } as const;
-export const AuthCookieName = 'Authentication';
 
 export const AuthCookieKey = {
   JWT_TOKEN: 'jwt-token',

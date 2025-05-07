@@ -15,7 +15,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginInputDto } from './dto/login-input.do';
+import { LoginInputDto } from './dto/login-input.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { UserEntity } from '../users/entities/user.entity';
 import { Response } from 'express';

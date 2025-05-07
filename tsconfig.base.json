@@ -15,6 +15,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@square-me/auth-service": ["libs/auth-service/src/index.ts"],
       "@square-me/grpc": ["libs/grpc/src/index.ts"],
       "@square-me/nestjs": ["libs/nestjs/src/index.ts"],
       "@square-me/rabbit-mq": ["libs/rabbit-mq/src/index.ts"]

@@ -5,6 +5,8 @@ import {
   VERSION_NEUTRAL,
   VersioningType,
 } from '@nestjs/common';
+import { Logger as PinoLogger } from 'nestjs-pino';
+
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { HttpAdapterHost, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -69,6 +71,11 @@ export const nestGlobalProvidersPlug: Plug = (app) => {
     type: VersioningType.URI,
     defaultVersion: VERSION_NEUTRAL,
   });
+  return app;
+};
+
+export const pinoLoggerPlug: Plug = (app) => {
+  app.useLogger(app.get(PinoLogger));
   return app;
 };
 

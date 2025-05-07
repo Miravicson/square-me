@@ -6,13 +6,14 @@ import {
   securityPlug,
   swaggerPlug,
   startAppPlug,
+  pinoLoggerPlug,
 } from '@square-me/nestjs';
 import { useContainer } from 'class-validator';
 
 async function bootstrap() {
   const app = configureApp(
     await NestFactory.create(AppModule, { bufferLogs: true }),
-    [nestGlobalProvidersPlug, securityPlug, swaggerPlug]
+    [pinoLoggerPlug, nestGlobalProvidersPlug, securityPlug, swaggerPlug]
   );
 
   // enable DI for class-validator
