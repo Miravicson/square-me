@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
-  AUTH_PACKAGE_NAME,
+  Packages,
   AUTH_SERVICE_NAME,
   AuthServiceClient,
 } from '@square-me/grpc';
@@ -19,7 +19,7 @@ import { AuthCookieKey } from '../constants';
 export class AuthServiceGuard implements CanActivate, OnModuleInit {
   private authService: AuthServiceClient;
   private readonly logger = new Logger(this.constructor.name);
-  constructor(@Inject(AUTH_PACKAGE_NAME) private readonly client: ClientGrpc) {}
+  constructor(@Inject(Packages.AUTH) private readonly client: ClientGrpc) {}
   onModuleInit() {
     this.authService =
       this.client.getService<AuthServiceClient>(AUTH_SERVICE_NAME);

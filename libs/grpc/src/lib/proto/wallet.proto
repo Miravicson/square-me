@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package wallet;
+
+service WalletService {
+  rpc BuyForex(BuyForexRequest) returns (BuyForexResponse);
+  rpc GetWalletBalance(GetWalletBalanceRequest) returns (GetWalletBalanceResponse);
+}
+
+message BuyForexRequest {
+  string userId = 1;
+  string baseCurrency = 2;
+  string amount = 3;
+  string targetCurrency = 4;
+}
+
+message BuyForexResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetWalletBalanceRequest {
+  string userId = 1;
+  string walletCurrency = 2;
+}
+
+message GetWalletBalanceResponse {
+  string userId = 1;
+  string walletId = 2;
+  string currency = 3;
+  string amount = 4;
+}

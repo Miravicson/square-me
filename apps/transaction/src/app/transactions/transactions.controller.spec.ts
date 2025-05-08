@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionsController } from './transactions.controller';
 import { AuthServiceGuard } from '@square-me/auth-service';
-import { AUTH_PACKAGE_NAME } from '@square-me/grpc';
+import { Packages } from '@square-me/grpc';
 
 describe('TransactionsController', () => {
   let controller: TransactionsController;
@@ -11,7 +11,7 @@ describe('TransactionsController', () => {
       controllers: [TransactionsController],
       providers: [
         { provide: AuthServiceGuard, useValue: {} },
-        { provide: AUTH_PACKAGE_NAME, useValue: {} },
+        { provide: Packages.AUTH, useValue: {} },
       ],
     }).compile();
 

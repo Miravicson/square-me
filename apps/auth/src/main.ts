@@ -11,7 +11,8 @@ import {
 import { GrpcOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { useContainer } from 'class-validator';
-import { AUTH_PACKAGE_NAME } from '@square-me/grpc';
+import { Packages } from '@square-me/grpc';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = configureApp(
@@ -25,7 +26,8 @@ async function bootstrap() {
   app.connectMicroservice<GrpcOptions>({
     transport: Transport.GRPC,
     options: {
-      package: AUTH_PACKAGE_NAME,
+      url: app.get(ConfigService).getOrThrow('AUTH_GRPC_SERVICE_URL'),
+      package: Packages.AUTH,
       protoPath: join(__dirname, '../../libs/grpc/proto/auth.proto'),
     },
   });

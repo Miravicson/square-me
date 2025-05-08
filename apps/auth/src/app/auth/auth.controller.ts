@@ -17,12 +17,12 @@ import {
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginInputDto } from './dto/login-input.dto';
-import { CurrentUser } from './decorators/current-user.decorator';
 import { UserEntity } from '../users/entities/user.entity';
 import { Response } from 'express';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { ResponseErrorEntity, ValidationErrorEntity } from '@square-me/nestjs';
 import { SignUpInputDto } from './dto/signup-input.dto';
+import { LocalCurrentUser } from './decorators/local-current-user.dectorator';
 
 @Controller({ version: '1', path: 'auth' })
 @ApiTags('Authentication')
@@ -50,7 +50,7 @@ export class AuthController {
   @ApiCookieAuth()
   @HttpCode(HttpStatus.OK)
   async login(
-    @CurrentUser() user: UserEntity,
+    @LocalCurrentUser() user: UserEntity,
     @Res({ passthrough: true }) response: Response,
     @Body() _loginDto: LoginInputDto
   ) {

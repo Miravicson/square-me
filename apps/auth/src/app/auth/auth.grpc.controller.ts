@@ -16,8 +16,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 @UseInterceptors(GrpcLoggingInterceptor)
 export class AuthGrpcController implements AuthServiceController {
   private readonly logger = new Logger(this.constructor.name);
-
   constructor(private readonly usersService: UsersService) {}
+
   @UseGuards(JwtAuthGuard)
   authenticate(
     request: AuthenticateRequest & { user: TokenPayload }
