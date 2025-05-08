@@ -4,14 +4,16 @@ package wallet;
 
 service WalletService {
   rpc BuyForex(BuyForexRequest) returns (BuyForexResponse);
+  rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse);
   rpc GetWalletBalance(GetWalletBalanceRequest) returns (GetWalletBalanceResponse);
+  rpc GetAllUserWallets(GetAllUserWalletsRequest) returns (GetAllUserWalletsResponse);
 }
 
 message BuyForexRequest {
-  string userId = 1;
-  string baseCurrency = 2;
+  string user_id = 1;
+  string base_currency = 2;
   string amount = 3;
-  string targetCurrency = 4;
+  string target_currency = 4;
 }
 
 message BuyForexResponse {
@@ -19,14 +21,35 @@ message BuyForexResponse {
   string message = 2;
 }
 
+message CreateWalletRequest {
+  string user_id = 1;
+  string currency = 2;
+}
+
+message CreateWalletResponse {
+  string user_id = 1;
+  string wallet_id = 2;
+  string currency = 3;
+  string amount = 4;
+}
+
+
 message GetWalletBalanceRequest {
-  string userId = 1;
-  string walletCurrency = 2;
+  string user_id = 1;
+  string wallet_currency = 2;
 }
 
 message GetWalletBalanceResponse {
-  string userId = 1;
-  string walletId = 2;
+  string user_id = 1;
+  string wallet_id = 2;
   string currency = 3;
   string amount = 4;
+}
+
+message GetAllUserWalletsRequest {
+  string user_id = 1;
+}
+
+message GetAllUserWalletsResponse {
+  repeated GetWalletBalanceResponse wallets = 1;
 }

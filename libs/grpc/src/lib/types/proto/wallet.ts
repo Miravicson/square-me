@@ -20,6 +20,18 @@ export interface BuyForexResponse {
   message: string;
 }
 
+export interface CreateWalletRequest {
+  userId: string;
+  currency: string;
+}
+
+export interface CreateWalletResponse {
+  userId: string;
+  walletId: string;
+  currency: string;
+  amount: string;
+}
+
 export interface GetWalletBalanceRequest {
   userId: string;
   walletCurrency: string;
@@ -32,12 +44,26 @@ export interface GetWalletBalanceResponse {
   amount: string;
 }
 
+export interface GetAllUserWalletsRequest {
+  userId: string;
+}
+
+export interface GetAllUserWalletsResponse {
+  wallets: GetWalletBalanceResponse[];
+}
+
 export interface WalletServiceClient {
   buyForex(request: BuyForexRequest): Observable<BuyForexResponse>;
+
+  createWallet(request: CreateWalletRequest): Observable<CreateWalletResponse>;
 
   getWalletBalance(
     request: GetWalletBalanceRequest
   ): Observable<GetWalletBalanceResponse>;
+
+  getAllUserWallets(
+    request: GetAllUserWalletsRequest
+  ): Observable<GetAllUserWalletsResponse>;
 }
 
 export interface WalletServiceController {
@@ -48,17 +74,36 @@ export interface WalletServiceController {
     | Observable<BuyForexResponse>
     | BuyForexResponse;
 
+  createWallet(
+    request: CreateWalletRequest
+  ):
+    | Promise<CreateWalletResponse>
+    | Observable<CreateWalletResponse>
+    | CreateWalletResponse;
+
   getWalletBalance(
     request: GetWalletBalanceRequest
   ):
     | Promise<GetWalletBalanceResponse>
     | Observable<GetWalletBalanceResponse>
     | GetWalletBalanceResponse;
+
+  getAllUserWallets(
+    request: GetAllUserWalletsRequest
+  ):
+    | Promise<GetAllUserWalletsResponse>
+    | Observable<GetAllUserWalletsResponse>
+    | GetAllUserWalletsResponse;
 }
 
 export function WalletServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ['buyForex', 'getWalletBalance'];
+    const grpcMethods: string[] = [
+      'buyForex',
+      'createWallet',
+      'getWalletBalance',
+      'getAllUserWallets',
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(
         constructor.prototype,
