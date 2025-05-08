@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { LoggerModule } from '@square-me/nestjs';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { LoggerModule } from '@square-me/nestjs';
     ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     UsersModule,
+    DatabaseModule,
   ],
   controllers: [],
   providers: [],

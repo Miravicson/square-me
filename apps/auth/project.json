@@ -40,6 +40,30 @@
       "options": {
         "passWithNoTests": true
       }
+    },
+    "migration:create": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "../../node_modules/.bin/typeorm migration:create src/migrations/migrations/{args.name}",
+        "forwardAllArgs": true,
+        "cwd": "{projectRoot}"
+      }
+    },
+    "migration:gen": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "ts-node --project tsconfig.app.json ../../node_modules/typeorm/cli migration:generate src/typeorm/migrations/{args.name} --pretty -d src/typeorm/data-source.ts",
+        "forwardAllArgs": true,
+        "cwd": "{projectRoot}",
+        "args": ["name"]
+      }
+    },
+    "migration:run": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "ts-node --project tsconfig.app.json ../../node_modules/typeorm/cli migration:run -d src/typeorm/data-source.ts",
+        "cwd": "{projectRoot}"
+      }
     }
   }
 }
