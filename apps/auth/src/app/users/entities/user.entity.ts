@@ -1,9 +1,15 @@
 import { ApiHideProperty } from '@nestjs/swagger';
+import { Users } from '../../../typeorm/models/users.model';
+
 import { Exclude } from 'class-transformer';
 
-export class UserEntity {
+export class UserEntity implements Users {
   id: string;
   email: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
+
   @ApiHideProperty()
   @Exclude()
   password: string;

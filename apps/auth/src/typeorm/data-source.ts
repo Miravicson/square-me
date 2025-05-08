@@ -11,7 +11,7 @@ const options = {
   autoLoadEntities: true,
   entities: [join(__dirname, 'models', '**/*.model{.ts,.js}')],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
-  entityPrefix: 'auth-service',
+  entityPrefix: 'auth-service-',
   schema: 'public',
 } satisfies TypeOrmModuleOptions;
 

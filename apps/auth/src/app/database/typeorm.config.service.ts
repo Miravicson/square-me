@@ -19,7 +19,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
       logging: !isProduction,
       migrationsRun: true,
       schema: 'public',
-      entityPrefix: 'auth-service',
+      entityPrefix: 'auth-service-',
     };
   }
 }

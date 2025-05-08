@@ -10,6 +10,7 @@ import {
 import {
   ApiBadRequestResponse,
   ApiCookieAuth,
+  ApiCreatedResponse,
   ApiOkResponse,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -21,11 +22,25 @@ import { UserEntity } from '../users/entities/user.entity';
 import { Response } from 'express';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { ResponseErrorEntity, ValidationErrorEntity } from '@square-me/nestjs';
+import { SignUpInputDto } from './dto/signup-input.dto';
 
 @Controller({ version: '1', path: 'auth' })
 @ApiTags('Authentication')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Post('signup')
+  @ApiUnauthorizedResponse({ type: ResponseErrorEntity })
+  @ApiBadRequestResponse({ type: ValidationErrorEntity })
+  @ApiCreatedResponse({ type: UserEntity })
+  async signup(
+    @Res({ passthrough: true }) response: Response,
+    @Body()
+    signupDto: SignUpInputDto
+  ) {
+    const result = await this.authService.signup(signupDto, response);
+    return new UserEntity(result);
+  }
 
   @UseGuards(LocalAuthGuard)
   @Post('login')

@@ -1,13 +1,19 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { CookieOptions, Response } from 'express';
-import { verify } from 'argon2';
+import { hash, verify } from 'argon2';
 
 import { UserEntity } from '../users/entities/user.entity';
 import { AuthCookieKey } from '@square-me/auth-service';
+import { SignUpInputDto } from './dto/signup-input.dto';
+import { tryCatch } from '@square-me/nestjs';
 
 interface SetJWTCookieOptions {
   key: string;
@@ -45,6 +51,22 @@ export class AuthService {
     response.cookie(key, value, cookieOptions);
   }
 
+  async signup(signupDto: SignUpInputDto, response: Response) {
+    const { data: user, error } = await tryCatch(
+      this.usersService.createBasicUserOrFail(
+        signupDto.email,
+        await hash(signupDto.password)
+      )
+    );
+    if (error !== null) {
+      throw new BadRequestException(
+        'Could not sign you up, check your credentials and try again'
+      );
+    }
+    await this.login(user, response);
+    return user;
+  }
+
   async login(user: UserEntity, response: Response) {
     const accessToken = this.jwtService.sign({
       userId: user.id,
@@ -59,20 +81,22 @@ export class AuthService {
   }
 
   async verifyUser(email: string, password: string) {
-    try {
-      const user = await this.usersService.getUser({
+    const { data: user, error: getUserError } = await tryCatch(
+      this.usersService.getUser({
         email,
-      });
-      const authenticated = await verify(user.password, password);
+      })
+    );
 
-      if (!authenticated) {
-        throw new UnauthorizedException();
-      }
-
-      return user;
-    } catch (err) {
-      console.error(err);
+    if (getUserError != null) {
       throw new UnauthorizedException('Credentials are not valid.');
     }
+
+    const { error: authErr } = await tryCatch(verify(user.password, password));
+
+    if (authErr != null) {
+      throw new UnauthorizedException('Credentials are not valid.');
+    }
+
+    return user;
   }
 }
