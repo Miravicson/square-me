@@ -8,6 +8,7 @@ onlyBuiltDependencies:
   - '@scarf/scarf'
   - argon2
   - esbuild
+  - nx
   - prisma
   - protobufjs
   - pulsar-client
