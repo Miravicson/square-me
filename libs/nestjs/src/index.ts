@@ -1,3 +1,4 @@
+export * from './lib/decorators/cv-is-positive-number-string.decorator';
 export * from './lib/decorators/decimal-to-string.decorator';
 export * from './lib/definitions';
 export * from './lib/entities/response-error.entity';

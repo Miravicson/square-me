@@ -55,9 +55,23 @@ export interface GetAllUserWalletsResponse {
 export interface FundWalletRequest {
   userId: string;
   walletId: string;
+  amount: string;
 }
 
 export interface FundWalletResponse {
+  userId: string;
+  walletId: string;
+  currency: string;
+  balance: string;
+}
+
+export interface WithdrawWalletRequest {
+  userId: string;
+  walletId: string;
+  amount: string;
+}
+
+export interface WithdrawWalletResponse {
   userId: string;
   walletId: string;
   currency: string;
@@ -74,6 +88,8 @@ export interface WalletServiceClient {
   getAllUserWallets(request: GetAllUserWalletsRequest): Observable<GetAllUserWalletsResponse>;
 
   fundWallet(request: FundWalletRequest): Observable<FundWalletResponse>;
+
+  withdrawWallet(request: WithdrawWalletRequest): Observable<WithdrawWalletResponse>;
 }
 
 export interface WalletServiceController {
@@ -94,11 +110,22 @@ export interface WalletServiceController {
   fundWallet(
     request: FundWalletRequest,
   ): Promise<FundWalletResponse> | Observable<FundWalletResponse> | FundWalletResponse;
+
+  withdrawWallet(
+    request: WithdrawWalletRequest,
+  ): Promise<WithdrawWalletResponse> | Observable<WithdrawWalletResponse> | WithdrawWalletResponse;
 }
 
 export function WalletServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["buyForex", "createWallet", "getWalletBalance", "getAllUserWallets", "fundWallet"];
+    const grpcMethods: string[] = [
+      "buyForex",
+      "createWallet",
+      "getWalletBalance",
+      "getAllUserWallets",
+      "fundWallet",
+      "withdrawWallet",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("WalletService", method)(constructor.prototype[method], method, descriptor);

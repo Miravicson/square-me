@@ -14,6 +14,8 @@ import {
   GrpcLoggingInterceptor,
   WalletServiceController,
   WalletServiceControllerMethods,
+  WithdrawWalletRequest,
+  WithdrawWalletResponse,
 } from '@square-me/grpc';
 import { Observable } from 'rxjs';
 
@@ -22,6 +24,15 @@ import { Observable } from 'rxjs';
 @UseInterceptors(GrpcLoggingInterceptor)
 export class WalletGrpcController implements WalletServiceController {
   constructor(private readonly walletService: WalletService) {}
+
+  withdrawWallet(
+    request: WithdrawWalletRequest
+  ):
+    | Promise<WithdrawWalletResponse>
+    | Observable<WithdrawWalletResponse>
+    | WithdrawWalletResponse {
+    return this.walletService.withdrawWallet(request);
+  }
   fundWallet(
     request: FundWalletRequest
   ):

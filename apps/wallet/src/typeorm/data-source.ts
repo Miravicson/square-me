@@ -9,7 +9,7 @@ const options = {
   type: 'postgres',
   url: process.env.DATABASE_URL,
   autoLoadEntities: true,
-  entities: [join(__dirname, 'models', '**/*.model{.ts,.js}')],
+  entities: [join(__dirname, '**/*.model{.ts,.js}')],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
   entityPrefix: process.env.SERVICE_ENTITY_PREFIX,
   schema: 'public',

@@ -4,19 +4,23 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
 import { tryCatch } from '@square-me/nestjs';
 import {
+  FundWalletRequest,
   Packages,
   WALLET_SERVICE_NAME,
   WalletServiceClient,
+  WithdrawWalletRequest,
 } from '@square-me/grpc';
 import { ClientGrpc } from '@nestjs/microservices';
 import { catchError, firstValueFrom, map } from 'rxjs';
 import { BuyForexInputDto } from './dto/buy-forex-input.dto';
 import Decimal from 'decimal.js';
 import { BuyForexRequest } from '@square-me/grpc';
+import { status } from '@grpc/grpc-js';
 
 type BuyForexServiceOptions = BuyForexInputDto & { userId: string };
 
@@ -45,29 +49,30 @@ export class TransactionsService implements OnModuleInit {
             map((res) => res),
             catchError((err) => {
               this.logger.error(
-                `Could not fetch wallet balance for wallet with currency: [${currency}] for user with id: [${userId}]`
+                `Could not fetch wallet balance for wallet with currency: [${currency}] for user with id: [${userId}]`,
+                err.stack
               );
-              throw new Error(err);
+              throw new InternalServerErrorException(
+                'Could not complete query for wallet balance'
+              );
             })
           )
       )
     );
 
     if (walletBalanceErr) {
-      throw new BadRequestException(
-        'Could not find any wallet associated with specified currency. Please create a wallet first'
-      );
+      throw walletBalanceErr;
     }
 
     return walletBalanceRes;
   }
 
-  private async validateWalletSufficientFunds(
-    amountToSell: string,
+  private validateWalletSufficientFunds(
+    amount: string,
     walletBalance: string
-  ): Promise<boolean> {
-    const result = new Decimal(amountToSell).lessThanOrEqualTo(
-      new Decimal(walletBalance)
+  ): boolean {
+    const result = new Decimal(walletBalance).greaterThanOrEqualTo(
+      new Decimal(amount)
     );
 
     if (!result) {
@@ -92,19 +97,104 @@ export class TransactionsService implements OnModuleInit {
           .pipe(
             map((res) => res),
             catchError((err) => {
-              throw new Error(err);
+              switch (err.code) {
+                case status.NOT_FOUND: {
+                  throw new NotFoundException(err.message);
+                }
+
+                case status.INVALID_ARGUMENT: {
+                  throw new BadRequestException(err.message);
+                }
+
+                case status.ABORTED: {
+                  throw new InternalServerErrorException(err.message);
+                }
+
+                default:
+                  throw new InternalServerErrorException(
+                    'Could not complet purchase of forex, try again later'
+                  );
+              }
             })
           )
       )
     );
 
     if (buyError) {
-      throw new InternalServerErrorException(
-        'Unable to complet purchase. Please try again later'
-      );
+      throw buyError;
     }
 
     return buyForexRes;
+  }
+
+  private async processWalletFunding(payload: FundWalletRequest) {
+    const { data: res, error } = await tryCatch(
+      firstValueFrom(
+        this.walletService.fundWallet(payload).pipe(
+          map((res) => res),
+          catchError((err) => {
+            this.logger.error(err);
+
+            switch (err.code) {
+              case status.NOT_FOUND: {
+                throw new NotFoundException(err.message);
+              }
+              case status.INVALID_ARGUMENT: {
+                throw new BadRequestException(err.message);
+              }
+              case status.ABORTED: {
+                throw new InternalServerErrorException(err.message);
+              }
+              default:
+                throw new InternalServerErrorException(
+                  'Unable to complete funding. Please try again later'
+                );
+            }
+          })
+        )
+      )
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return res;
+  }
+
+  private async processWalletWithdrawal(payload: WithdrawWalletRequest) {
+    const { data: res, error } = await tryCatch(
+      firstValueFrom(
+        this.walletService.withdrawWallet(payload).pipe(
+          map((res) => res),
+          catchError((err) => {
+            this.logger.error(err);
+
+            switch (err.code) {
+              case status.NOT_FOUND: {
+                throw new NotFoundException(err.message);
+              }
+              case status.INVALID_ARGUMENT: {
+                throw new BadRequestException(err.message);
+              }
+              case status.ABORTED: {
+                throw new InternalServerErrorException(err.message);
+              }
+              default:
+                throw new InternalServerErrorException(
+                  'Unable to complete funding. Please try again later'
+                );
+            }
+          })
+        )
+      )
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return res;
   }
 
   async buyForex(options: BuyForexServiceOptions) {
@@ -112,10 +202,16 @@ export class TransactionsService implements OnModuleInit {
       options.userId,
       options.baseCurrency
     );
-    await this.validateWalletSufficientFunds(
-      options.amount,
-      walletBalance.balance
-    );
+
+    this.validateWalletSufficientFunds(options.amount, walletBalance.balance);
     return this.processForexPurchase(options);
+  }
+
+  async fundWallet(userId: string, walletId: string, amount: string) {
+    return await this.processWalletFunding({ userId, walletId, amount });
+  }
+
+  async withdrawWallet(userId: string, walletId: string, amount: string) {
+    return await this.processWalletWithdrawal({ userId, walletId, amount });
   }
 }

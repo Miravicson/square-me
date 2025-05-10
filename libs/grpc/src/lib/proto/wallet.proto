@@ -8,6 +8,7 @@ service WalletService {
   rpc GetWalletBalance(GetWalletBalanceRequest) returns (GetWalletBalanceResponse);
   rpc GetAllUserWallets(GetAllUserWalletsRequest) returns (GetAllUserWalletsResponse);
   rpc FundWallet(FundWalletRequest) returns (FundWalletResponse);
+  rpc WithdrawWallet(WithdrawWalletRequest) returns (WithdrawWalletResponse);
 }
 
 message BuyForexRequest {
@@ -58,9 +59,24 @@ message GetAllUserWalletsResponse {
 message FundWalletRequest {
   string user_id = 1;
   string wallet_id = 2;
+  string amount = 3;
 }
 
 message FundWalletResponse {
+  string user_id = 1;
+  string wallet_id = 2;
+  string currency = 3;
+  string balance = 4;
+}
+
+
+message WithdrawWalletRequest {
+  string user_id = 1;
+  string wallet_id = 2;
+  string amount = 3;
+}
+
+message WithdrawWalletResponse {
   string user_id = 1;
   string wallet_id = 2;
   string currency = 3;

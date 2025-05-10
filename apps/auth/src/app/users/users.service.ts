@@ -3,13 +3,13 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from '../../typeorm/models/users.model';
 import { FindOneOptions, Repository } from 'typeorm';
 import {
-  CreateWalletRequest,
   Packages,
   WALLET_SERVICE_NAME,
   WalletServiceClient,
@@ -17,6 +17,7 @@ import {
 import { ClientGrpc } from '@nestjs/microservices';
 import { tryCatch } from '@square-me/nestjs';
 import { catchError, firstValueFrom, map } from 'rxjs';
+import { status } from '@grpc/grpc-js';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
@@ -59,15 +60,18 @@ export class UsersService implements OnModuleInit {
         this.walletService.getAllUserWallets({ userId }).pipe(
           map((res) => res),
           catchError((err) => {
-            throw new Error(err);
+            this.logger.error(error);
+            if (err.code === status.NOT_FOUND) {
+              throw new NotFoundException(err.message);
+            }
+            throw new InternalServerErrorException(err);
           })
         )
       )
     );
 
     if (error) {
-      this.logger.error(error);
-      throw new InternalServerErrorException('Something wrong happened');
+      throw error;
     }
 
     return response.wallets;

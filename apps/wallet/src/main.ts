@@ -4,7 +4,6 @@ import {
   configureApp,
   nestGlobalProvidersPlug,
   pinoLoggerPlug,
-  startAppPlug,
 } from '@square-me/nestjs';
 
 import { GrpcOptions, Transport } from '@nestjs/microservices';
@@ -27,6 +26,6 @@ async function bootstrap() {
     },
   });
 
-  await startAppPlug(app, true);
+  await app.startAllMicroservices();
 }
 bootstrap();

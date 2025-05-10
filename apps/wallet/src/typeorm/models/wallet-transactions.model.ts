@@ -6,10 +6,16 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 import { Wallet } from './wallets.model';
+import Decimal from 'decimal.js';
+
+import { Transform } from 'class-transformer';
+import { DecimalToString, DecimalTransformer } from '../decimal-transformer';
 
 export enum TransactionType {
   CREDIT = 'credit',
   DEBIT = 'debit',
+  WITHDRAW = 'withdraw',
+  FUND = 'fund',
 }
 
 @Entity()
@@ -23,8 +29,15 @@ export class WalletTransaction {
   @Column({ type: 'enum', enum: TransactionType })
   type: TransactionType;
 
-  @Column({ type: 'float' })
-  amount: number;
+  @Column({
+    type: 'decimal',
+    default: 0.0,
+    precision: 10,
+    scale: 2,
+    transformer: new DecimalTransformer(),
+  })
+  @Transform(DecimalToString(), { toPlainOnly: true })
+  amount: Decimal;
 
   @Column()
   currency: string;
