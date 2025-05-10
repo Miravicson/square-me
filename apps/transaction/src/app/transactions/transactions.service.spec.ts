@@ -1,12 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionsService } from './transactions.service';
+import { Packages } from '@square-me/grpc';
 
 describe('TransactionsService', () => {
   let service: TransactionsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TransactionsService],
+      providers: [
+        TransactionsService,
+        { provide: Packages.WALLET, useValue: {} },
+      ],
     }).compile();
 
     service = module.get<TransactionsService>(TransactionsService);

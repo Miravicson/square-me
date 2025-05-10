@@ -7,6 +7,13 @@
       "cwd": "${workspaceFolder}/apps/auth",
       "type": "node",
       "port": 9229
+    },
+    {
+      "name": "Attach to wallet",
+      "request": "attach",
+      "cwd": "${workspaceFolder}/apps/wallet",
+      "type": "node",
+      "port": 9229
     }
   ]
 }

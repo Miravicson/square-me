@@ -114,7 +114,7 @@ export class TransactionsService implements OnModuleInit {
     );
     await this.validateWalletSufficientFunds(
       options.amount,
-      walletBalance.amount
+      walletBalance.balance
     );
     return this.processForexPurchase(options);
   }

@@ -30,7 +30,6 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
-  @ApiUnauthorizedResponse({ type: ResponseErrorEntity })
   @ApiBadRequestResponse({ type: ValidationErrorEntity })
   @ApiCreatedResponse({ type: UserEntity })
   async signup(

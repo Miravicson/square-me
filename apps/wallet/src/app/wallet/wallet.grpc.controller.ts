@@ -3,6 +3,12 @@ import { WalletService } from './wallet.service';
 import {
   BuyForexRequest,
   BuyForexResponse,
+  CreateWalletRequest,
+  CreateWalletResponse,
+  FundWalletRequest,
+  FundWalletResponse,
+  GetAllUserWalletsRequest,
+  GetAllUserWalletsResponse,
   GetWalletBalanceRequest,
   GetWalletBalanceResponse,
   GrpcLoggingInterceptor,
@@ -16,6 +22,31 @@ import { Observable } from 'rxjs';
 @UseInterceptors(GrpcLoggingInterceptor)
 export class WalletGrpcController implements WalletServiceController {
   constructor(private readonly walletService: WalletService) {}
+  fundWallet(
+    request: FundWalletRequest
+  ):
+    | Promise<FundWalletResponse>
+    | Observable<FundWalletResponse>
+    | FundWalletResponse {
+    return this.walletService.fundWallet(request);
+  }
+
+  createWallet(
+    request: CreateWalletRequest
+  ):
+    | Promise<CreateWalletResponse>
+    | Observable<CreateWalletResponse>
+    | CreateWalletResponse {
+    return this.walletService.createWallet(request);
+  }
+  getAllUserWallets(
+    request: GetAllUserWalletsRequest
+  ):
+    | Promise<GetAllUserWalletsResponse>
+    | Observable<GetAllUserWalletsResponse>
+    | GetAllUserWalletsResponse {
+    return this.walletService.getAllUserWallets(request);
+  }
   getWalletBalance(
     request: GetWalletBalanceRequest
   ):
