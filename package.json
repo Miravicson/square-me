@@ -11,6 +11,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.13.3",
     "@grpc/proto-loader": "^0.7.15",
+    "@nestjs/axios": "^4.0.0",
     "@nestjs/common": "^11.1.0",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.0",
@@ -28,6 +29,7 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",
+    "ioredis": "^5.6.1",
     "nest-commander": "^3.17.0",
     "nestjs-pino": "^4.4.0",
     "pg": "^8.15.6",

@@ -1,7 +1,40 @@
 services:
   postgres:
-    image: postgres
-    ports:
-      - 5432:5432
+    profiles:
+      - 'backing-service'
+      - 'all'
+      - 'dev'
+      - 'api'
+    image: postgres:16.4-alpine
+    container_name: square_me_microservices_postgres
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    profiles:
+      - 'backing-service'
+      - 'all'
+      - 'dev'
+      - 'api'
+    container_name: square_me_microservices_redis
+    image: redis:latest
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --requirepass mypassword --port 6379 --databases 16
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -21,7 +21,7 @@ import {
 } from '../../typeorm/models/wallet-transactions.model';
 import { DataSource, Repository } from 'typeorm';
 import Decimal from 'decimal.js';
-import { Result, tryCatch } from '@square-me/nestjs';
+import { tryCatch } from '@square-me/nestjs';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 
