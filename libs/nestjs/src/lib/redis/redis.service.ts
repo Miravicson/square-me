@@ -11,6 +11,16 @@ export class RedisService implements OnModuleDestroy {
     this.redis = new Redis(redisUrl);
   }
 
+  /**
+   * Check if a key exists in Redis
+   * @param key Redis key
+   * @returns true if key exists, false otherwise
+   */
+  async hasKey(key: string): Promise<boolean> {
+    const exists = await this.redis.exists(key);
+    return exists === 1;
+  }
+
   async setString(key: string, value: string, ttlSeconds?: number) {
     if (ttlSeconds) {
       await this.redis.set(key, value, 'EX', ttlSeconds);
@@ -58,6 +68,26 @@ export class RedisService implements OnModuleDestroy {
 
   async delete(key: string) {
     await this.redis.del(key);
+  }
+
+  /**
+   * Sets a single field in a Redis hash.
+   * Equivalent to HSET hashKey field value
+   */
+  async setHashField(
+    hashKey: string,
+    field: string,
+    value: string
+  ): Promise<number> {
+    return this.redis.hset(hashKey, field, value);
+  }
+
+  /**
+   * Get the value of a single field in a Redis hash.
+   * Equivalent to HGET hashKey field
+   */
+  async getHashField(hashKey: string, field: string): Promise<string | null> {
+    return this.redis.hget(hashKey, field);
   }
 
   async onModuleDestroy() {

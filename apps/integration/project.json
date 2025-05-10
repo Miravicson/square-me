@@ -60,8 +60,10 @@
     "fetch-exchange-rate": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "env-cmd -f {projectRoot}/.env node dist/apps/integration/cli.js test-exchange-rate-api",
-        "cwd": "."
+        "command": "env-cmd -f {projectRoot}/.env node dist/apps/integration/cli.js {args.command}",
+        "forwardAllArgs": true,
+        "cwd": ".",
+        "args": ["command"]
       },
       "dependsOn": ["integration:build", "^build"]
     }

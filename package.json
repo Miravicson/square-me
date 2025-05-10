@@ -5,7 +5,9 @@
   "scripts": {
     "prepare": "husky",
     "upgrade:nestjs": "npx npm-check-updates -u -f \"/nestjs*/\" ",
-    "typeorm": "typeorm-ts-node-commonjs"
+    "typeorm": "typeorm-ts-node-commonjs",
+    "test:currency:conversion": "nx fetch-exchange-rate integration --args=\"--command=test-exchange-service\"",
+    "test:currency:api": "nx fetch-exchange-rate integration --args=\"--command=test-exchange-rate-api\""
   },
   "private": true,
   "dependencies": {

@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { LoggerModule } from '@square-me/nestjs';
+import { LoggerModule, RedisModule } from '@square-me/nestjs';
 import { ExchangeRateModule } from './exchange-rate/exchange-rate.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
     LoggerModule,
+    RedisModule,
     ExchangeRateModule,
     ConfigModule.forRoot({ isGlobal: true }),
   ],

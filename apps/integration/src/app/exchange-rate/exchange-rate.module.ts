@@ -4,7 +4,10 @@ import { ExchangeRateHttpService } from './exchange-rate-http.service';
 import { HttpModule } from '@nestjs/axios';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigService } from '@nestjs/config';
-import { TestExchangeRateCommand } from './exchange-rate.command';
+import {
+  TestExchangeRateCommand,
+  TestExchangeRateServiceCommand,
+} from './exchange-rate.command';
 
 @Module({
   imports: [
@@ -20,6 +23,7 @@ import { TestExchangeRateCommand } from './exchange-rate.command';
     ExchangeRateService,
     ExchangeRateHttpService,
     TestExchangeRateCommand,
+    TestExchangeRateServiceCommand,
   ],
 })
 export class ExchangeRateModule {}
