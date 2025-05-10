@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package integration;
+
+service IntegrationService {
+  rpc ConvertCurrency(ConvertCurrencyRequest) returns (ConvertCurrencyResponse);
+}
+
+
+message ConvertCurrencyRequest {
+  string from = 1;
+  string to = 2;
+}
+
+message ConvertCurrencyResponse {
+  string from = 1;
+  string to = 2;
+  float exchange_ratio = 3;
+}

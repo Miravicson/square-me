@@ -9,12 +9,29 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "webpack-cli build",
-        "args": ["node-env=production"]
+        "args": ["node-env=production"],
+        "additionalEntryPoints": [
+          {
+            "entryName": "cli",
+            "entryPath": "apps/integration/src/main-cli.ts"
+          }
+        ]
       },
       "configurations": {
         "development": {
           "args": ["node-env=development"]
         }
+      }
+    },
+    "build-cli": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          {
+            "command": "tsc -p apps/integration/tsconfig.cli.json"
+          }
+        ],
+        "cwd": "."
       }
     },
     "serve": {
@@ -39,6 +56,14 @@
       "options": {
         "passWithNoTests": true
       }
+    },
+    "fetch-exchange-rate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "env-cmd -f {projectRoot}/.env node dist/apps/integration/cli.js test-exchange-rate-api",
+        "cwd": "."
+      },
+      "dependsOn": ["integration:build", "^build"]
     }
   }
 }
