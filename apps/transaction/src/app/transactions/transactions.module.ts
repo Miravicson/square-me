@@ -7,6 +7,7 @@ import { Packages } from '@square-me/grpc';
 import { join } from 'path';
 import { AuthServiceGuard } from '@square-me/auth-service';
 import { ConfigService } from '@nestjs/config';
+import { CurrencyIsSupportedRule } from './validations/currency-is-supported.rule';
 
 @Module({
   imports: [
@@ -35,9 +36,24 @@ import { ConfigService } from '@nestjs/config';
         }),
         inject: [ConfigService],
       },
+      {
+        name: Packages.INTEGRATION,
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.GRPC,
+          options: {
+            url: configService.getOrThrow('INTEGRATION_GRPC_URL'),
+            package: Packages.INTEGRATION,
+            protoPath: join(
+              __dirname,
+              '../../libs/grpc/proto/integration.proto'
+            ),
+          },
+        }),
+        inject: [ConfigService],
+      },
     ]),
   ],
   controllers: [TransactionsController],
-  providers: [TransactionsService, AuthServiceGuard],
+  providers: [TransactionsService, AuthServiceGuard, CurrencyIsSupportedRule],
 })
 export class TransactionsModule {}

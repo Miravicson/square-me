@@ -13,6 +13,7 @@ describe('UsersService', () => {
         UsersService,
         { provide: getRepositoryToken(Users), useValue: {} },
         { provide: Packages.WALLET, useValue: {} },
+        { provide: Packages.INTEGRATION, useValue: {} },
       ],
     }).compile();
 

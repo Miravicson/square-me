@@ -10,6 +10,8 @@ import {
 import { tryCatch } from '@square-me/nestjs';
 import {
   FundWalletRequest,
+  INTEGRATION_SERVICE_NAME,
+  IntegrationServiceClient,
   Packages,
   WALLET_SERVICE_NAME,
   WalletServiceClient,
@@ -28,16 +30,36 @@ type BuyForexServiceOptions = BuyForexInputDto & { userId: string };
 export class TransactionsService implements OnModuleInit {
   private readonly logger = new Logger(this.constructor.name);
   private walletService: WalletServiceClient;
+  private integrationService: IntegrationServiceClient;
   constructor(
-    @Inject(Packages.WALLET) private readonly walletClient: ClientGrpc
+    @Inject(Packages.WALLET) private readonly walletClient: ClientGrpc,
+    @Inject(Packages.INTEGRATION)
+    private readonly integrationClient: ClientGrpc
   ) {}
 
   onModuleInit() {
-    this.walletService =
-      this.walletClient.getService<WalletServiceClient>(WALLET_SERVICE_NAME);
+    this.getOrCreateWalletService();
+    this.getOrCreateIntegrationService();
+  }
+
+  private getOrCreateWalletService() {
+    if (!this.walletService) {
+      this.walletService =
+        this.walletClient.getService<WalletServiceClient>(WALLET_SERVICE_NAME);
+    }
+  }
+
+  private getOrCreateIntegrationService() {
+    if (!this.integrationService) {
+      this.integrationService =
+        this.integrationClient.getService<IntegrationServiceClient>(
+          INTEGRATION_SERVICE_NAME
+        );
+    }
   }
 
   private async checkWalletBalace(userId: string, currency: string) {
+    this.getOrCreateWalletService();
     const { data: walletBalanceRes, error: walletBalanceErr } = await tryCatch(
       firstValueFrom(
         this.walletService

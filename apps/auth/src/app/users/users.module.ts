@@ -7,6 +7,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Packages } from '@square-me/grpc';
 import { ConfigService } from '@nestjs/config';
 import { join } from 'path';
+import { CurrencyIsSupportedRule } from './validations/currency-is-supported.rule';
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import { join } from 'path';
     ]),
   ],
   controllers: [UsersController],
-  providers: [UsersService],
+  providers: [UsersService, CurrencyIsSupportedRule],
   exports: [UsersService, TypeOrmModule],
 })
 export class UsersModule {}
