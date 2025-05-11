@@ -116,8 +116,8 @@ export class ExchangeRateService implements OnModuleInit {
     await Promise.all(fetchAndStorePromises);
   }
 
-  async getExchangeRate(from: string, to: string): Promise<number> {
-    if (from === to) return 1;
+  async getExchangeRate(from: string, to: string): Promise<string> {
+    if (from === to) return '1';
 
     const key = this.getConversionKey(from, to);
     const rate = await this.redisService.getHashField(
@@ -125,7 +125,7 @@ export class ExchangeRateService implements OnModuleInit {
       key
     );
 
-    return parseFloat(rate);
+    return rate;
   }
 
   async updateExchangeRate(from: string, to: string): Promise<number> {
