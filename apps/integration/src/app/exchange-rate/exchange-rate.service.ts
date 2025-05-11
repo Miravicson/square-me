@@ -146,4 +146,20 @@ export class ExchangeRateService implements OnModuleInit {
 
     return newRate;
   }
+
+  async getSupportedCurrencies() {
+    const result = await this.redisService.getSetMembers(
+      this.supportedCurrencyKey
+    );
+
+    return result;
+  }
+
+  async isCurrencySupported(currency: string) {
+    const result = await this.redisService.isMemberOfSet(
+      this.supportedCurrencyKey,
+      currency
+    );
+    return result;
+  }
 }

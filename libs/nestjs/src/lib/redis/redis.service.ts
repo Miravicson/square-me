@@ -70,10 +70,6 @@ export class RedisService implements OnModuleDestroy {
     await this.redis.del(key);
   }
 
-  /**
-   * Sets a single field in a Redis hash.
-   * Equivalent to HSET hashKey field value
-   */
   async setHashField(
     hashKey: string,
     field: string,
@@ -82,15 +78,15 @@ export class RedisService implements OnModuleDestroy {
     return this.redis.hset(hashKey, field, value);
   }
 
-  /**
-   * Get the value of a single field in a Redis hash.
-   * Equivalent to HGET hashKey field
-   */
   async getHashField(hashKey: string, field: string): Promise<string | null> {
     return this.redis.hget(hashKey, field);
   }
 
   async onModuleDestroy() {
     await this.redis.quit();
+  }
+
+  async getSetMembers(key: string): Promise<string[]> {
+    return this.redis.smembers(key);
   }
 }

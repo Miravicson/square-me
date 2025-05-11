@@ -4,8 +4,10 @@ package integration;
 
 service IntegrationService {
   rpc ConvertCurrency(ConvertCurrencyRequest) returns (ConvertCurrencyResponse);
-}
+  rpc SupportedCurrencies(SupportedCurrenciesRequest) returns (SupportedCurrenciesResponse);
 
+  rpc CheckIfCurrencySupported(CheckIfCurrencySupportedRequest) returns (CheckIfCurrencySupportedResponse);
+}
 
 message ConvertCurrencyRequest {
   string from = 1;
@@ -16,4 +18,18 @@ message ConvertCurrencyResponse {
   string from = 1;
   string to = 2;
   string exchange_rate = 3;
+}
+
+message SupportedCurrenciesRequest {}
+
+message SupportedCurrenciesResponse {
+  repeated string currencies = 1;
+}
+
+message CheckIfCurrencySupportedRequest {
+  string currency = 1;
+}
+
+message CheckIfCurrencySupportedResponse {
+  bool is_supported = 1;
 }

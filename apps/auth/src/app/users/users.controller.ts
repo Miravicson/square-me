@@ -48,4 +48,18 @@ export class UsersController {
     const result = await this.userService.getAllUserWallets(user.userId);
     return UserWalletEntity.many(result);
   }
+
+  @ApiCookieAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOkResponse({
+    schema: {
+      type: 'array',
+      items: { type: 'string' },
+      nullable: false,
+    },
+  })
+  @Get('exchage-rate/supported-currencies')
+  async getSupportedCurrencies() {
+    return this.userService.getSupportedCurrencies();
+  }
 }
