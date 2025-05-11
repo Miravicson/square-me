@@ -24,6 +24,21 @@ import { join } from 'path';
         }),
         inject: [ConfigService],
       },
+      {
+        name: Packages.INTEGRATION,
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.GRPC,
+          options: {
+            url: configService.getOrThrow('INTEGRATION_GRPC_URL'),
+            package: Packages.INTEGRATION,
+            protoPath: join(
+              __dirname,
+              '../../libs/grpc/proto/integration.proto'
+            ),
+          },
+        }),
+        inject: [ConfigService],
+      },
     ]),
   ],
   controllers: [UsersController],

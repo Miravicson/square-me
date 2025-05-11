@@ -23,8 +23,6 @@ import { ConfigService } from '@nestjs/config';
         }),
         inject: [ConfigService],
       },
-    ]),
-    ClientsModule.registerAsync([
       {
         name: Packages.WALLET,
         useFactory: (configService: ConfigService) => ({

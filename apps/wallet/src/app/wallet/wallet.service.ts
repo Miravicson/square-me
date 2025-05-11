@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   BuyForexRequest,
   BuyForexResponse,
+  ConvertCurrencyRequest,
   CreateWalletRequest,
   CreateWalletResponse,
   FundWalletRequest,
@@ -11,6 +12,8 @@ import {
   GetAllUserWalletsResponse,
   GetWalletBalanceRequest,
   GetWalletBalanceResponse,
+  IntegrationServiceClient,
+  Packages,
   WithdrawWalletRequest,
   WithdrawWalletResponse,
 } from '@square-me/grpc';
@@ -19,11 +22,13 @@ import {
   TransactionType,
   WalletTransaction,
 } from '../../typeorm/models/wallet-transactions.model';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import Decimal from 'decimal.js';
 import { tryCatch } from '@square-me/nestjs';
-import { RpcException } from '@nestjs/microservices';
+import { ClientGrpc, RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
+import { catchError, firstValueFrom, map } from 'rxjs';
+import { INTEGRATION_SERVICE_NAME } from '@square-me/grpc';
 
 interface WalletEntity {
   walletId: string;
@@ -33,16 +38,26 @@ interface WalletEntity {
 }
 
 @Injectable()
-export class WalletService {
+export class WalletService implements OnModuleInit {
   private readonly logger = new Logger(this.constructor.name);
+  private integrationService: IntegrationServiceClient;
 
   constructor(
+    @Inject(Packages.INTEGRATION)
+    private readonly integrationClient: ClientGrpc,
     @InjectRepository(Wallet)
     private readonly walletRepository: Repository<Wallet>,
     @InjectRepository(WalletTransaction)
     private readonly walletTxnRepository: Repository<WalletTransaction>,
     private readonly dataSource: DataSource
   ) {}
+
+  onModuleInit() {
+    this.integrationService =
+      this.integrationClient.getService<IntegrationServiceClient>(
+        INTEGRATION_SERVICE_NAME
+      );
+  }
 
   private createWalletEntity(wallet: Wallet): WalletEntity {
     return {
@@ -61,28 +76,6 @@ export class WalletService {
     }
     return true;
   };
-
-  async fundWallet(request: FundWalletRequest): Promise<FundWalletResponse> {
-    return this.handleWalletTransaction({
-      request,
-      type: TransactionType.FUND,
-      description: 'Fund wallet',
-      updateBalance: (balance, amount) => balance.plus(amount),
-      validate: () => true,
-    });
-  }
-
-  async withdrawWallet(
-    request: WithdrawWalletRequest
-  ): Promise<WithdrawWalletResponse> {
-    return this.handleWalletTransaction({
-      request,
-      type: TransactionType.WITHDRAW,
-      description: 'Withdrawal from wallet',
-      updateBalance: (balance, amount) => balance.minus(amount),
-      validate: this.validateSufficientFund,
-    });
-  }
 
   private async handleWalletTransaction({
     request,
@@ -138,6 +131,52 @@ export class WalletService {
     }
 
     return this.createWalletEntity(wallet);
+  }
+
+  private async fetchExchangeRate(
+    request: ConvertCurrencyRequest
+  ): Promise<Decimal> {
+    const { data, error } = await tryCatch(
+      firstValueFrom(
+        this.integrationService.convertCurrency(request).pipe(
+          map((res) => res),
+          catchError((err) => {
+            this.logger.error(err);
+            throw new RpcException({
+              code: status.ABORTED,
+            });
+          })
+        )
+      )
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return new Decimal(data.exchangeRate);
+  }
+
+  async fundWallet(request: FundWalletRequest): Promise<FundWalletResponse> {
+    return this.handleWalletTransaction({
+      request,
+      type: TransactionType.FUND,
+      description: 'Fund wallet',
+      updateBalance: (balance, amount) => balance.plus(amount),
+      validate: () => true,
+    });
+  }
+
+  async withdrawWallet(
+    request: WithdrawWalletRequest
+  ): Promise<WithdrawWalletResponse> {
+    return this.handleWalletTransaction({
+      request,
+      type: TransactionType.WITHDRAW,
+      description: 'Withdrawal from wallet',
+      updateBalance: (balance, amount) => balance.minus(amount),
+      validate: this.validateSufficientFund,
+    });
   }
 
   async createWallet(
@@ -204,16 +243,23 @@ export class WalletService {
   }
 
   async buyForex(request: BuyForexRequest): Promise<BuyForexResponse> {
-    const exchangeRatio = new Decimal('1.5');
+    if (!this.integrationService) {
+      this.onModuleInit();
+    }
+
+    const exchangeRate = await this.fetchExchangeRate({
+      from: request.baseCurrency,
+      to: request.targetCurrency,
+    });
 
     const [findBaseWalletResult, findTargetWalletResult] = await Promise.all([
       tryCatch(
-        this.walletRepository.findOne({
+        this.walletRepository.findOneOrFail({
           where: { currency: request.baseCurrency },
         })
       ),
       tryCatch(
-        this.walletRepository.findOne({
+        this.walletRepository.findOneOrFail({
           where: { currency: request.targetCurrency },
         })
       ),
@@ -231,25 +277,24 @@ export class WalletService {
 
     this.validateSufficientFund(baseWallet, amount);
 
+    const getOrCreateTargetWallet = async (manager: EntityManager) => {
+      if (findTargetWalletResult.error) {
+        const wallet = await this.walletRepository.create({
+          balance: new Decimal(0.0),
+          currency: request.targetCurrency,
+          userId: request.userId,
+        });
+
+        await manager.save(wallet);
+        return wallet;
+      }
+      return findTargetWalletResult.data;
+    };
+
     const { error: txnErr } = await tryCatch(
       this.dataSource.transaction(async (manager) => {
-        const getOrCreateTargetWallet = async () => {
-          if (findTargetWalletResult.error) {
-            const wallet = await this.walletRepository.create({
-              balance: new Decimal(0.0),
-              currency: request.targetCurrency,
-              userId: request.userId,
-            });
-
-            await manager.save(wallet);
-
-            return wallet;
-          }
-          return findTargetWalletResult.data;
-        };
-
-        const targetWallet = await getOrCreateTargetWallet();
-        const targetWalletAmount = amount.mul(exchangeRatio);
+        const targetWallet = await getOrCreateTargetWallet(manager);
+        const targetWalletAmount = amount.mul(exchangeRate);
         baseWallet.balance = baseWallet.balance.minus(amount);
         targetWallet.balance = targetWallet.balance.plus(targetWalletAmount);
 
@@ -279,9 +324,10 @@ export class WalletService {
     );
 
     if (txnErr) {
+      this.logger.error(txnErr);
       throw new RpcException({
         code: status.ABORTED,
-        message: 'Could not complete wallet purchase try again later',
+        message: 'Could not complete forex purchase try again later',
       });
     }
 

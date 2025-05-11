@@ -5,8 +5,8 @@
 // source: proto/integration.proto
 
 /* eslint-disable */
-import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
 export interface ConvertCurrencyRequest {
   from: string;
@@ -16,51 +16,32 @@ export interface ConvertCurrencyRequest {
 export interface ConvertCurrencyResponse {
   from: string;
   to: string;
-  exchangeRatio: number;
+  exchangeRate: number;
 }
 
 export interface IntegrationServiceClient {
-  convertCurrency(
-    request: ConvertCurrencyRequest
-  ): Observable<ConvertCurrencyResponse>;
+  convertCurrency(request: ConvertCurrencyRequest): Observable<ConvertCurrencyResponse>;
 }
 
 export interface IntegrationServiceController {
   convertCurrency(
-    request: ConvertCurrencyRequest
-  ):
-    | Promise<ConvertCurrencyResponse>
-    | Observable<ConvertCurrencyResponse>
-    | ConvertCurrencyResponse;
+    request: ConvertCurrencyRequest,
+  ): Promise<ConvertCurrencyResponse> | Observable<ConvertCurrencyResponse> | ConvertCurrencyResponse;
 }
 
 export function IntegrationServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ['convertCurrency'];
+    const grpcMethods: string[] = ["convertCurrency"];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(
-        constructor.prototype,
-        method
-      );
-      GrpcMethod('IntegrationService', method)(
-        constructor.prototype[method],
-        method,
-        descriptor
-      );
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("IntegrationService", method)(constructor.prototype[method], method, descriptor);
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(
-        constructor.prototype,
-        method
-      );
-      GrpcStreamMethod('IntegrationService', method)(
-        constructor.prototype[method],
-        method,
-        descriptor
-      );
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("IntegrationService", method)(constructor.prototype[method], method, descriptor);
     }
   };
 }
 
-export const INTEGRATION_SERVICE_NAME = 'IntegrationService';
+export const INTEGRATION_SERVICE_NAME = "IntegrationService";

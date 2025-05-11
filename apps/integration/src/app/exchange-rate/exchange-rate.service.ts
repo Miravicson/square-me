@@ -116,7 +116,7 @@ export class ExchangeRateService implements OnModuleInit {
     await Promise.all(fetchAndStorePromises);
   }
 
-  async getExchangeRate(from: string, to: string): Promise<number | null> {
+  async getExchangeRate(from: string, to: string): Promise<number> {
     if (from === to) return 1;
 
     const key = this.getConversionKey(from, to);
@@ -125,7 +125,7 @@ export class ExchangeRateService implements OnModuleInit {
       key
     );
 
-    return rate ? parseFloat(rate) : null;
+    return parseFloat(rate);
   }
 
   async updateExchangeRate(from: string, to: string): Promise<number> {

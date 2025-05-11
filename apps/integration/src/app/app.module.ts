@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { LoggerModule, RedisModule } from '@square-me/nestjs';
 import { ExchangeRateModule } from './exchange-rate/exchange-rate.module';
 import { ConfigModule } from '@nestjs/config';
+import { IntegrationGrpcController } from './integration.grpc.controller';
+import { IntegrationService } from './integration.service';
 
 @Module({
   imports: [
@@ -12,7 +12,7 @@ import { ConfigModule } from '@nestjs/config';
     ExchangeRateModule,
     ConfigModule.forRoot({ isGlobal: true }),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [IntegrationGrpcController],
+  providers: [IntegrationService],
 })
 export class AppModule {}

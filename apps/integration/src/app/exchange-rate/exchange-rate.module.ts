@@ -25,5 +25,7 @@ import {
     TestExchangeRateCommand,
     TestExchangeRateServiceCommand,
   ],
+  controllers: [],
+  exports: [ExchangeRateService],
 })
 export class ExchangeRateModule {}

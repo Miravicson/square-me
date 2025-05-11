@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Wallet } from '../../typeorm/models/wallets.model';
 import { WalletTransaction } from '../../typeorm/models/wallet-transactions.model';
 import { DataSource } from 'typeorm';
+import { Packages } from '@square-me/grpc';
 
 describe('WalletService', () => {
   let service: WalletService;
@@ -15,6 +16,7 @@ describe('WalletService', () => {
         { provide: getRepositoryToken(Wallet), useValue: {} },
         { provide: getRepositoryToken(WalletTransaction), useValue: {} },
         { provide: DataSource, useValue: {} },
+        { provide: Packages.INTEGRATION, useValue: {} },
       ],
     }).compile();
 
