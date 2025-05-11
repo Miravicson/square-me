@@ -39,7 +39,7 @@ export class ExchangeRateHttpService implements OnModuleInit {
     baseCode: string
   ): Promise<ExchangeRateHttpResponse> {
     this.exchangeUrlCode = baseCode;
-    this.logger.verbose(this.exchangeURL);
+    this.logger.log(this.exchangeURL);
     const { data, error } = await tryCatch(
       firstValueFrom(
         this.httpService.get<ExchangeRateHttpResponse>(this.exchangeURL)

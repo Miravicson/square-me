@@ -27,5 +27,6 @@ async function bootstrap() {
   });
 
   await app.startAllMicroservices();
+  await app.listen(0); // needed to ensure cron job runs
 }
 bootstrap();

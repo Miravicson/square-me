@@ -1,11 +1,13 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { RedisService } from '@square-me/nestjs';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { RedisService, tryCatch } from '@square-me/nestjs';
 import { ExchangeRateHttpService } from './exchange-rate-http.service';
 import { ExchangeRateHttpResponse } from './exchang-rate-http-response.interface';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class ExchangeRateService implements OnModuleInit {
   private EXCHANGE_RATE_REDIS_KEY = 'exchange-rate';
+  private readonly logger = new Logger(this.constructor.name);
 
   constructor(
     private readonly redisService: RedisService,
@@ -161,5 +163,18 @@ export class ExchangeRateService implements OnModuleInit {
       currency
     );
     return result;
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_6AM, {
+    name: 'refresh-exchange-rate',
+    timeZone: 'Africa/Lagos',
+  })
+  async handleRefreshExchangeRateCron() {
+    this.logger.log(`About refreshing exchange rate`);
+    const { error } = await tryCatch(this.refreshAllExchangeRates());
+    if (error) {
+      this.logger.error(`Failed while refreshing exchange rates`);
+      this.logger.error(error.message, error.stack);
+    }
   }
 }
