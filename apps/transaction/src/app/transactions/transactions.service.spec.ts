@@ -16,6 +16,7 @@ describe('TransactionsService', () => {
         TransactionsService,
         { provide: Packages.WALLET, useValue: {} },
         { provide: Packages.INTEGRATION, useValue: {} },
+        { provide: Packages.NOTIFICATION, useValue: {} },
         { provide: getRepositoryToken(ForexTransaction), useValue: {} },
         { provide: getRepositoryToken(ForexOrder), useValue: {} },
         { provide: DataSource, useValue: {} },
