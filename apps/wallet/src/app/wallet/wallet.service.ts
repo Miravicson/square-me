@@ -273,6 +273,7 @@ export class WalletService implements OnModuleInit {
     }
 
     const amount = new Decimal(request.amount);
+    const targetWalletAmount = amount.mul(exchangeRate);
     const baseWallet = findBaseWalletResult.data;
 
     this.validateSufficientFund(baseWallet, amount);
@@ -334,6 +335,8 @@ export class WalletService implements OnModuleInit {
     return {
       message: 'success',
       success: true,
+      exchangeRate: exchangeRate.toString(),
+      targetAmount: targetWalletAmount.toString(),
     };
   }
 }

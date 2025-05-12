@@ -21,6 +21,8 @@ message BuyForexRequest {
 message BuyForexResponse {
   bool success = 1;
   string message = 2;
+  string exchange_rate = 3;
+  string target_amount = 4;
 }
 
 message CreateWalletRequest {

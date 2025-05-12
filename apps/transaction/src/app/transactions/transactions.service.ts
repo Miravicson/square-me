@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { tryCatch } from '@square-me/nestjs';
 import {
+  BuyForexResponse,
   FundWalletRequest,
   INTEGRATION_SERVICE_NAME,
   IntegrationServiceClient,
@@ -18,11 +19,20 @@ import {
   WithdrawWalletRequest,
 } from '@square-me/grpc';
 import { ClientGrpc } from '@nestjs/microservices';
-import { catchError, firstValueFrom, map } from 'rxjs';
+import { catchError, firstValueFrom, map, of } from 'rxjs';
 import { BuyForexInputDto } from './dto/buy-forex-input.dto';
 import Decimal from 'decimal.js';
-import { BuyForexRequest } from '@square-me/grpc';
 import { status } from '@grpc/grpc-js';
+import { ForexTransaction } from '../../typeorm/models/forex-transaction.model';
+import { DataSource, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ForexOrder } from '../../typeorm/models/forex-order.model';
+import {
+  OrderStatus,
+  OrderType,
+  TransactionStatus,
+} from '../../typeorm/models/enums';
+import { RetryOrderProducer } from './retry-order.producer';
 
 type BuyForexServiceOptions = BuyForexInputDto & { userId: string };
 
@@ -34,7 +44,13 @@ export class TransactionsService implements OnModuleInit {
   constructor(
     @Inject(Packages.WALLET) private readonly walletClient: ClientGrpc,
     @Inject(Packages.INTEGRATION)
-    private readonly integrationClient: ClientGrpc
+    private readonly integrationClient: ClientGrpc,
+    @InjectRepository(ForexTransaction)
+    private readonly forexTxnRepo: Repository<ForexTransaction>,
+    @InjectRepository(ForexOrder)
+    private readonly forexOrderRepo: Repository<ForexOrder>,
+    private readonly dataSource: DataSource,
+    private readonly retryOrerProducer: RetryOrderProducer
   ) {}
 
   onModuleInit() {
@@ -58,95 +74,124 @@ export class TransactionsService implements OnModuleInit {
     }
   }
 
-  private async checkWalletBalace(userId: string, currency: string) {
-    this.getOrCreateWalletService();
-    const { data: walletBalanceRes, error: walletBalanceErr } = await tryCatch(
-      firstValueFrom(
-        this.walletService
-          .getWalletBalance({
-            userId: userId,
-            walletCurrency: currency,
+  async processForexPurchase(forexOrder: ForexOrder) {
+    const forexTxn = await this.forexTxnRepo.save(
+      this.forexTxnRepo.create({
+        userId: forexOrder.userId,
+        orderId: forexOrder.id,
+        baseCurrency: forexOrder.baseCurrency,
+        targetCurrency: forexOrder.targetCurrency,
+        amount: new Decimal(forexOrder.amount),
+        status: TransactionStatus.INITIATED,
+        exchangeRate: null,
+        targetAmount: null,
+      })
+    );
+
+    const buyForexRes = await firstValueFrom(
+      this.walletService
+        .buyForex({
+          amount: forexOrder.amount.toString(),
+          baseCurrency: forexOrder.baseCurrency,
+          targetCurrency: forexOrder.targetCurrency,
+          userId: forexOrder.userId,
+        })
+        .pipe(
+          map((res) => this.succeedOrder(forexOrder.id, forexTxn.id, res)),
+          catchError((err) => {
+            switch (err.code) {
+              case status.NOT_FOUND:
+              case status.INVALID_ARGUMENT:
+                return of(
+                  this.failOrder(
+                    forexOrder.id,
+                    forexTxn.id,
+                    err.message,
+                    err.code,
+                    true
+                  )
+                );
+
+              case status.ABORTED:
+              default:
+                return of(
+                  this.failOrder(
+                    forexOrder.id,
+                    forexTxn.id,
+                    err.message,
+                    err.code,
+                    false
+                  )
+                );
+            }
           })
-          .pipe(
-            map((res) => res),
-            catchError((err) => {
-              this.logger.error(
-                `Could not fetch wallet balance for wallet with currency: [${currency}] for user with id: [${userId}]`,
-                err.stack
-              );
-              throw new InternalServerErrorException(
-                'Could not complete query for wallet balance'
-              );
-            })
-          )
-      )
+        )
     );
-
-    if (walletBalanceErr) {
-      throw walletBalanceErr;
-    }
-
-    return walletBalanceRes;
-  }
-
-  private validateWalletSufficientFunds(
-    amount: string,
-    walletBalance: string
-  ): boolean {
-    const result = new Decimal(walletBalance).greaterThanOrEqualTo(
-      new Decimal(amount)
-    );
-
-    if (!result) {
-      throw new BadRequestException(
-        'Insufficient funds in wallet. Top up wallet and try again'
-      );
-    }
-
-    return result;
-  }
-
-  private async processForexPurchase(payload: BuyForexRequest) {
-    const { data: buyForexRes, error: buyError } = await tryCatch(
-      firstValueFrom(
-        this.walletService
-          .buyForex({
-            amount: payload.amount,
-            baseCurrency: payload.baseCurrency,
-            targetCurrency: payload.targetCurrency,
-            userId: payload.userId,
-          })
-          .pipe(
-            map((res) => res),
-            catchError((err) => {
-              switch (err.code) {
-                case status.NOT_FOUND: {
-                  throw new NotFoundException(err.message);
-                }
-
-                case status.INVALID_ARGUMENT: {
-                  throw new BadRequestException(err.message);
-                }
-
-                case status.ABORTED: {
-                  throw new InternalServerErrorException(err.message);
-                }
-
-                default:
-                  throw new InternalServerErrorException(
-                    'Could not complete purchase of forex, try again later'
-                  );
-              }
-            })
-          )
-      )
-    );
-
-    if (buyError) {
-      throw buyError;
-    }
 
     return buyForexRes;
+  }
+
+  async failOrder(
+    orderId: string,
+    transactionId: string,
+    errMessage: string,
+    errCode: status,
+    hardFail = false
+  ) {
+    await this.forexTxnRepo.update(transactionId, {
+      status: TransactionStatus.FAILED,
+      errorMessage: errMessage,
+      errorStatus: errCode,
+    });
+    if (hardFail) {
+      await this.forexOrderRepo.update(orderId, {
+        status: OrderStatus.FAILED,
+        errorMessage: errMessage,
+        errorStatus: errCode,
+      });
+
+      return {
+        message: 'Permanent failure',
+        forexOrderId: orderId,
+        forexTransactionId: transactionId,
+      };
+    } else {
+      await this.retryOrerProducer.enqueue({
+        orderId,
+        transactionId,
+        errCode,
+        errMessage,
+      });
+
+      return {
+        message: 'Temporary failure; Retrying order',
+        forexOrderId: orderId,
+        forexTransactionId: transactionId,
+      };
+    }
+  }
+
+  private async succeedOrder(
+    orderId: string,
+    transactionId: string,
+    walletResponse: BuyForexResponse
+  ) {
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(ForexOrder, orderId, {
+        status: OrderStatus.COMPLETED,
+      });
+      await manager.update(ForexTransaction, transactionId, {
+        status: TransactionStatus.COMPLETED,
+        exchangeRate: new Decimal(walletResponse.exchangeRate),
+        targetAmount: new Decimal(walletResponse.targetAmount),
+      });
+    });
+
+    return {
+      message: 'Order completed',
+      forexOrderId: orderId,
+      forexTransactionId: transactionId,
+    };
   }
 
   private async processWalletFunding(payload: FundWalletRequest) {
@@ -220,13 +265,18 @@ export class TransactionsService implements OnModuleInit {
   }
 
   async buyForex(options: BuyForexServiceOptions) {
-    const walletBalance = await this.checkWalletBalace(
-      options.userId,
-      options.baseCurrency
+    const forexOrder = await this.forexOrderRepo.save(
+      this.forexOrderRepo.create({
+        userId: options.userId,
+        type: OrderType.BUY,
+        baseCurrency: options.baseCurrency,
+        targetCurrency: options.targetCurrency,
+        amount: new Decimal(options.amount),
+        status: OrderStatus.PENDING,
+      })
     );
 
-    this.validateWalletSufficientFunds(options.amount, walletBalance.balance);
-    return this.processForexPurchase(options);
+    return this.processForexPurchase(forexOrder);
   }
 
   async fundWallet(userId: string, walletId: string, amount: string) {

@@ -5,8 +5,8 @@
 // source: proto/wallet.proto
 
 /* eslint-disable */
-import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { Observable } from "rxjs";
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
 
 export interface BuyForexRequest {
   userId: string;
@@ -18,6 +18,8 @@ export interface BuyForexRequest {
 export interface BuyForexResponse {
   success: boolean;
   message: string;
+  exchangeRate: string;
+  targetAmount: string;
 }
 
 export interface CreateWalletRequest {
@@ -83,59 +85,99 @@ export interface WalletServiceClient {
 
   createWallet(request: CreateWalletRequest): Observable<CreateWalletResponse>;
 
-  getWalletBalance(request: GetWalletBalanceRequest): Observable<GetWalletBalanceResponse>;
+  getWalletBalance(
+    request: GetWalletBalanceRequest
+  ): Observable<GetWalletBalanceResponse>;
 
-  getAllUserWallets(request: GetAllUserWalletsRequest): Observable<GetAllUserWalletsResponse>;
+  getAllUserWallets(
+    request: GetAllUserWalletsRequest
+  ): Observable<GetAllUserWalletsResponse>;
 
   fundWallet(request: FundWalletRequest): Observable<FundWalletResponse>;
 
-  withdrawWallet(request: WithdrawWalletRequest): Observable<WithdrawWalletResponse>;
+  withdrawWallet(
+    request: WithdrawWalletRequest
+  ): Observable<WithdrawWalletResponse>;
 }
 
 export interface WalletServiceController {
-  buyForex(request: BuyForexRequest): Promise<BuyForexResponse> | Observable<BuyForexResponse> | BuyForexResponse;
+  buyForex(
+    request: BuyForexRequest
+  ):
+    | Promise<BuyForexResponse>
+    | Observable<BuyForexResponse>
+    | BuyForexResponse;
 
   createWallet(
-    request: CreateWalletRequest,
-  ): Promise<CreateWalletResponse> | Observable<CreateWalletResponse> | CreateWalletResponse;
+    request: CreateWalletRequest
+  ):
+    | Promise<CreateWalletResponse>
+    | Observable<CreateWalletResponse>
+    | CreateWalletResponse;
 
   getWalletBalance(
-    request: GetWalletBalanceRequest,
-  ): Promise<GetWalletBalanceResponse> | Observable<GetWalletBalanceResponse> | GetWalletBalanceResponse;
+    request: GetWalletBalanceRequest
+  ):
+    | Promise<GetWalletBalanceResponse>
+    | Observable<GetWalletBalanceResponse>
+    | GetWalletBalanceResponse;
 
   getAllUserWallets(
-    request: GetAllUserWalletsRequest,
-  ): Promise<GetAllUserWalletsResponse> | Observable<GetAllUserWalletsResponse> | GetAllUserWalletsResponse;
+    request: GetAllUserWalletsRequest
+  ):
+    | Promise<GetAllUserWalletsResponse>
+    | Observable<GetAllUserWalletsResponse>
+    | GetAllUserWalletsResponse;
 
   fundWallet(
-    request: FundWalletRequest,
-  ): Promise<FundWalletResponse> | Observable<FundWalletResponse> | FundWalletResponse;
+    request: FundWalletRequest
+  ):
+    | Promise<FundWalletResponse>
+    | Observable<FundWalletResponse>
+    | FundWalletResponse;
 
   withdrawWallet(
-    request: WithdrawWalletRequest,
-  ): Promise<WithdrawWalletResponse> | Observable<WithdrawWalletResponse> | WithdrawWalletResponse;
+    request: WithdrawWalletRequest
+  ):
+    | Promise<WithdrawWalletResponse>
+    | Observable<WithdrawWalletResponse>
+    | WithdrawWalletResponse;
 }
 
 export function WalletServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
-      "buyForex",
-      "createWallet",
-      "getWalletBalance",
-      "getAllUserWallets",
-      "fundWallet",
-      "withdrawWallet",
+      'buyForex',
+      'createWallet',
+      'getWalletBalance',
+      'getAllUserWallets',
+      'fundWallet',
+      'withdrawWallet',
     ];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("WalletService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method
+      );
+      GrpcMethod('WalletService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor
+      );
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("WalletService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method
+      );
+      GrpcStreamMethod('WalletService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor
+      );
     }
   };
 }
 
-export const WALLET_SERVICE_NAME = "WalletService";
+export const WALLET_SERVICE_NAME = 'WalletService';

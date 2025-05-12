@@ -12,6 +12,7 @@ import { DecimalToString, DecimalTransformer } from '../decimal-transformer';
 import Decimal from 'decimal.js';
 import { Transform } from 'class-transformer';
 import { IsISO4217CurrencyCode } from 'class-validator';
+import { status as GrpcStatus } from '@grpc/grpc-js';
 
 @Entity()
 export class ForexOrder {
@@ -50,6 +51,19 @@ export class ForexOrder {
     enum: OrderStatus,
   })
   status: OrderStatus;
+
+  @Column({ default: 0 })
+  retryAttempts: number;
+
+  @Column({
+    type: 'enum',
+    enum: GrpcStatus,
+    nullable: true,
+  })
+  errorStatus: GrpcStatus | null;
+
+  @Column({ nullable: true })
+  errorMessage: string | null;
 
   @CreateDateColumn()
   createdAt: Date;
