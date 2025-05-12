@@ -8,6 +8,9 @@ import { join } from 'path';
 import { AuthServiceGuard } from '@square-me/auth-service';
 import { ConfigService } from '@nestjs/config';
 import { CurrencyIsSupportedRule } from './validations/currency-is-supported.rule';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ForexTransaction } from '../../typeorm/models/forex-transaction.model';
+import { ForexOrder } from '../../typeorm/models/forex-order.model';
 
 @Module({
   imports: [
@@ -52,6 +55,7 @@ import { CurrencyIsSupportedRule } from './validations/currency-is-supported.rul
         inject: [ConfigService],
       },
     ]),
+    TypeOrmModule.forFeature([ForexTransaction, ForexOrder]),
   ],
   controllers: [TransactionsController],
   providers: [TransactionsService, AuthServiceGuard, CurrencyIsSupportedRule],

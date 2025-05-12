@@ -134,7 +134,7 @@ export class TransactionsService implements OnModuleInit {
 
                 default:
                   throw new InternalServerErrorException(
-                    'Could not complet purchase of forex, try again later'
+                    'Could not complete purchase of forex, try again later'
                   );
               }
             })
