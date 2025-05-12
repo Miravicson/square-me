@@ -6,6 +6,7 @@ import { ForexTransaction } from '../../typeorm/models/forex-transaction.model';
 import { ForexOrder } from '../../typeorm/models/forex-order.model';
 import { DataSource } from 'typeorm';
 import { RetryOrderProducer } from './retry-order.producer';
+import { NOTIFICATION_CLIENT } from '@square-me/microservice-client';
 
 describe('TransactionsService', () => {
   let service: TransactionsService;
@@ -16,7 +17,7 @@ describe('TransactionsService', () => {
         TransactionsService,
         { provide: Packages.WALLET, useValue: {} },
         { provide: Packages.INTEGRATION, useValue: {} },
-        { provide: Packages.NOTIFICATION, useValue: {} },
+        { provide: NOTIFICATION_CLIENT, useValue: {} },
         { provide: getRepositoryToken(ForexTransaction), useValue: {} },
         { provide: getRepositoryToken(ForexOrder), useValue: {} },
         { provide: DataSource, useValue: {} },

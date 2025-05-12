@@ -8,10 +8,9 @@ import {
   securityPlug,
   pinoLoggerPlug,
 } from '@square-me/nestjs';
-import { GrpcOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path';
+import { GrpcOptions } from '@nestjs/microservices';
 import { useContainer } from 'class-validator';
-import { Packages } from '@square-me/grpc';
+import { createAuthGrpcClient } from '@square-me/microservice-client';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
@@ -19,18 +18,14 @@ async function bootstrap() {
     await NestFactory.create(AppModule, { bufferLogs: true }),
     [pinoLoggerPlug, nestGlobalProvidersPlug, securityPlug, swaggerPlug]
   );
-
+  const configService = app.get(ConfigService);
   // enable DI for class-validator
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
-
-  app.connectMicroservice<GrpcOptions>({
-    transport: Transport.GRPC,
-    options: {
-      url: app.get(ConfigService).getOrThrow('AUTH_GRPC_SERVICE_URL'),
-      package: Packages.AUTH,
-      protoPath: join(__dirname, '../../libs/grpc/proto/auth.proto'),
-    },
-  });
+  app.connectMicroservice<GrpcOptions>(
+    createAuthGrpcClient(
+      configService.getOrThrow<string>('AUTH_GRPC_SERVICE_URL')
+    )
+  );
 
   await startAppPlug(app, true);
 }

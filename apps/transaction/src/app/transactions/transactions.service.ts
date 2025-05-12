@@ -33,6 +33,7 @@ import {
   TransactionStatus,
 } from '../../typeorm/models/enums';
 import { RetryOrderProducer } from './retry-order.producer';
+import { NOTIFICATION_CLIENT } from '@square-me/microservice-client';
 
 type BuyForexServiceOptions = BuyForexInputDto & {
   userId: string;
@@ -65,7 +66,7 @@ export class TransactionsService implements OnModuleInit {
     @Inject(Packages.WALLET) private readonly walletClient: ClientGrpc,
     @Inject(Packages.INTEGRATION)
     private readonly integrationClient: ClientGrpc,
-    @Inject(Packages.NOTIFICATION)
+    @Inject(NOTIFICATION_CLIENT)
     private readonly notificationClient: ClientProxy,
     @InjectRepository(ForexTransaction)
     private readonly forexTxnRepo: Repository<ForexTransaction>,

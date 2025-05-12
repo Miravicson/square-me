@@ -6,10 +6,9 @@ import {
   pinoLoggerPlug,
 } from '@square-me/nestjs';
 
-import { GrpcOptions, Transport } from '@nestjs/microservices';
-import { Packages } from '@square-me/grpc';
-import { join } from 'path';
+import { GrpcOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
+import { createIntegrationGrpcClient } from '@square-me/microservice-client';
 
 async function bootstrap() {
   const app = configureApp(
@@ -17,14 +16,13 @@ async function bootstrap() {
     [pinoLoggerPlug, nestGlobalProvidersPlug]
   );
 
-  app.connectMicroservice<GrpcOptions>({
-    transport: Transport.GRPC,
-    options: {
-      url: app.get(ConfigService).getOrThrow('INTEGRATION_GRPC_URL'),
-      package: Packages.INTEGRATION,
-      protoPath: join(__dirname, '../../libs/grpc/proto/integration.proto'),
-    },
-  });
+  const configService = app.get(ConfigService);
+
+  app.connectMicroservice<GrpcOptions>(
+    createIntegrationGrpcClient(
+      configService.getOrThrow<string>('INTEGRATION_GRPC_URL')
+    )
+  );
 
   await app.startAllMicroservices();
   await app.listen(0); // needed to ensure cron job runs

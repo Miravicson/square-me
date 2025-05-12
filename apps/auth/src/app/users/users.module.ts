@@ -3,44 +3,13 @@ import { UsersService } from './users.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Users } from '../../typeorm/models/users.model';
 import { UsersController } from './users.controller';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { Packages } from '@square-me/grpc';
-import { ConfigService } from '@nestjs/config';
-import { join } from 'path';
 import { CurrencyIsSupportedRule } from './validations/currency-is-supported.rule';
+import { MicroserviceClientModule } from '@square-me/microservice-client';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Users]),
-    ClientsModule.registerAsync([
-      {
-        name: Packages.WALLET,
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.GRPC,
-          options: {
-            url: configService.getOrThrow('WALLET_GRPC_SERVICE_URL'),
-            package: Packages.WALLET,
-            protoPath: join(__dirname, '../../libs/grpc/proto/wallet.proto'),
-          },
-        }),
-        inject: [ConfigService],
-      },
-      {
-        name: Packages.INTEGRATION,
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.GRPC,
-          options: {
-            url: configService.getOrThrow('INTEGRATION_GRPC_URL'),
-            package: Packages.INTEGRATION,
-            protoPath: join(
-              __dirname,
-              '../../libs/grpc/proto/integration.proto'
-            ),
-          },
-        }),
-        inject: [ConfigService],
-      },
-    ]),
+    MicroserviceClientModule.register({ clients: ['wallet', 'integration'] }),
   ],
   controllers: [UsersController],
   providers: [UsersService, CurrencyIsSupportedRule],

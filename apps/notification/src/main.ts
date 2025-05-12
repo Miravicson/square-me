@@ -5,10 +5,9 @@ import {
   nestGlobalProvidersPlug,
   pinoLoggerPlug,
 } from '@square-me/nestjs';
-
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-
+import { MicroserviceOptions } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
+import { createNotificationRMqClient } from '@square-me/microservice-client';
 async function bootstrap() {
   const app = configureApp(
     await NestFactory.create(AppModule, { bufferLogs: true }),
@@ -17,16 +16,12 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [configService.getOrThrow<string>('RABBIT_MQ_URL')],
-      queue: configService.getOrThrow<string>('RABBIT_MQ_QUEUE_NAME'),
-      queueOptions: {
-        durable: false,
-      },
-    },
-  });
+  app.connectMicroservice<MicroserviceOptions>(
+    createNotificationRMqClient(
+      configService.getOrThrow<string>('RABBIT_MQ_URL'),
+      configService.getOrThrow<string>('RABBIT_MQ_QUEUE_NAME')
+    )
+  );
 
   await app.startAllMicroservices();
   await app.listen(0);
