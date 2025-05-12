@@ -5,7 +5,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { AuthServiceGuard, CurrentUser } from '@square-me/auth-service';
+import { AuthServiceGuard, CurrentUser } from '@square-me/microservice-client';
 import { BuyForexInputDto } from './dto/buy-forex-input.dto';
 import { GrpcUser } from '@square-me/grpc';
 import { ResponseErrorEntity, ValidationErrorEntity } from '@square-me/nestjs';

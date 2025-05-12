@@ -4,7 +4,7 @@ import { Strategy } from 'passport-local';
 import { AuthService } from '../auth.service';
 
 import { UserEntity } from '../../users/entities/user.entity';
-import { AuthStrategyName } from '@square-me/auth-service';
+import { AuthStrategyName } from '@square-me/microservice-client';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(

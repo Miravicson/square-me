@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionsController } from './transactions.controller';
-import { AuthServiceGuard } from '@square-me/auth-service';
+import { AuthServiceGuard } from '@square-me/microservice-client';
 import { Packages } from '@square-me/grpc';
 import { TransactionsService } from './transactions.service';
 

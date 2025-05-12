@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { TokenPayload } from '../interfaces/token-payload.interface';
 import { fromCookieAsJwt, fromGRPC } from '../jwt.cookie.extractor';
-import { AuthCookieKey } from '@square-me/auth-service';
+import { AuthCookieKey } from '@square-me/microservice-client';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {

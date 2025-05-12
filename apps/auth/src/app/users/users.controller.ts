@@ -10,7 +10,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser } from '@square-me/auth-service';
+import { CurrentUser } from '@square-me/microservice-client';
 import { TokenPayload } from '../auth/interfaces/token-payload.interface';
 import { ResponseErrorEntity, ValidationErrorEntity } from '@square-me/nestjs';
 import { CreateWalletInputDto } from './dto/create-wallet-input.dto';

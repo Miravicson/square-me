@@ -1,10 +1,10 @@
 export default {
-  displayName: 'auth-service',
+  displayName: 'microservice-client',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
-  coverageDirectory: '../../coverage/libs/auth-service',
+  coverageDirectory: '../../coverage/libs/microservice-client',
 };

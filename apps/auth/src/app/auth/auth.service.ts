@@ -11,7 +11,7 @@ import { CookieOptions, Response } from 'express';
 import { hash, verify } from 'argon2';
 
 import { UserEntity } from '../users/entities/user.entity';
-import { AuthCookieKey } from '@square-me/auth-service';
+import { AuthCookieKey } from '@square-me/microservice-client';
 import { SignUpInputDto } from './dto/signup-input.dto';
 import { tryCatch } from '@square-me/nestjs';
 

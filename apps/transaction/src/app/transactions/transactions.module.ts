@@ -5,7 +5,7 @@ import { TransactionsService } from './transactions.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { Packages } from '@square-me/grpc';
 import { join } from 'path';
-import { AuthServiceGuard } from '@square-me/auth-service';
+import { AuthServiceGuard } from '@square-me/microservice-client';
 import { ConfigService } from '@nestjs/config';
 import { CurrencyIsSupportedRule } from './validations/currency-is-supported.rule';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -57,21 +57,6 @@ import { RetryOrderConsumer } from './retry-order.consumer';
         }),
         inject: [ConfigService],
       },
-      // {
-      //   name: Packages.NOTIFICATION,
-      //   useFactory: (configService: ConfigService) => ({
-      //     transport: Transport.GRPC,
-      //     options: {
-      //       url: configService.getOrThrow('NOTIFICATION_GRPC_URL'),
-      //       package: Packages.NOTIFICATION,
-      //       protoPath: join(
-      //         __dirname,
-      //         '../../libs/grpc/proto/notification.proto'
-      //       ),
-      //     },
-      //   }),
-      //   inject: [ConfigService],
-      // },
       {
         name: Packages.NOTIFICATION,
         useFactory: (configService: ConfigService) => {
