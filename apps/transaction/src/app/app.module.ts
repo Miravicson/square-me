@@ -3,13 +3,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TransactionsModule } from './transactions/transactions.module';
 import { LoggerModule } from '@square-me/nestjs';
 import { BullModule } from '@nestjs/bullmq';
-import { DatabaseModule } from './database/database.module';
+import { TypeormModule } from '@square-me/typeorm';
 
 @Module({
   imports: [
     LoggerModule,
     ConfigModule.forRoot({ isGlobal: true }),
-    DatabaseModule,
+    TypeormModule,
     TransactionsModule,
     BullModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({

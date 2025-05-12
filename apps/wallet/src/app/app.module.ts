@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { WalletModule } from './wallet/wallet.module';
 import { LoggerModule } from '@square-me/nestjs';
 import { ConfigModule } from '@nestjs/config';
-import { DatabaseModule } from './database/database.module';
+import { TypeormModule } from '@square-me/typeorm';
 
 @Module({
   imports: [
     LoggerModule,
-    DatabaseModule,
+    TypeormModule,
     ConfigModule.forRoot({ isGlobal: true }),
     WalletModule,
   ],
