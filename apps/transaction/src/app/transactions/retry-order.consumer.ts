@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ForexOrder } from '../../typeorm/models/forex-order.model';
 import { Logger } from '@nestjs/common';
+import { ForexTransaction } from '../../typeorm/models/forex-transaction.model';
 
 @Processor(QUEUE_FOREX_RETRY)
 export class RetryOrderConsumer extends WorkerHost {
@@ -16,7 +17,9 @@ export class RetryOrderConsumer extends WorkerHost {
     private readonly transactionService: TransactionsService,
     private readonly configService: ConfigService,
     @InjectRepository(ForexOrder)
-    private readonly forexOrderRepo: Repository<ForexOrder>
+    private readonly forexOrderRepo: Repository<ForexOrder>,
+    @InjectRepository(ForexTransaction)
+    private readonly forexTxnRepo: Repository<ForexTransaction>
   ) {
     super();
   }
@@ -35,17 +38,22 @@ export class RetryOrderConsumer extends WorkerHost {
       1
     );
 
-    const forexOrder = await this.forexOrderRepo.findOne({
-      where: { id: data.orderId },
-    });
+    const [forexOrder, forexTxn] = await Promise.all([
+      this.forexOrderRepo.findOne({
+        where: { id: data.orderId },
+      }),
+      this.forexTxnRepo.findOne({ where: { id: data.transactionId } }),
+    ]);
 
-    if (forexOrder) {
+    if (forexOrder && forexTxn) {
       if (forexOrder.retryAttempts >= maxRetries) {
         await this.transactionService.failOrder(
-          data.orderId,
-          data.transactionId,
-          data.errMessage,
-          data.errCode,
+          {
+            forexOrder,
+            forexTxn,
+            errMessage: data.errMessage,
+            errCode: data.errCode,
+          },
           true
         );
         return;

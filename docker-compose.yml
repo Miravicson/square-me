@@ -20,6 +20,33 @@ services:
       timeout: 5s
       retries: 5
 
+  mailhog:
+    profiles:
+      - backing-service
+    image: mailhog/mailhog:latest
+    platform: linux/amd64
+    container_name: square_me_mailhog
+    restart: always
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+    environment:
+      MH_STORAGE: memory
+
+  rabbitmq:
+    profiles:
+      - backing-service
+    image: rabbitmq:3-management
+    platform: linux/amd64
+    container_name: square_me_rabbitmq
+    restart: always
+    ports:
+      - '5672:5672' # AMQP protocol
+      - '15672:15672' # Web UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
   redis:
     profiles:
       - 'backing-service'

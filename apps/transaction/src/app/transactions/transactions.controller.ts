@@ -29,6 +29,7 @@ export class TransactionsController {
     const response = await this.transactionService.buyForex({
       ...inputDto,
       userId: user.id,
+      userEmail: user.email,
     });
 
     return response;

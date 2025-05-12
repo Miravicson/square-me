@@ -11,7 +11,7 @@ import { ForexTransaction } from './forex-transaction.model';
 import { DecimalToString, DecimalTransformer } from '../decimal-transformer';
 import Decimal from 'decimal.js';
 import { Transform } from 'class-transformer';
-import { IsISO4217CurrencyCode } from 'class-validator';
+import { IsEmail, IsISO4217CurrencyCode } from 'class-validator';
 import { status as GrpcStatus } from '@grpc/grpc-js';
 
 @Entity()
@@ -21,6 +21,10 @@ export class ForexOrder {
 
   @Column()
   userId: string;
+
+  @Column()
+  @IsEmail()
+  userEmail: string;
 
   @Column({
     type: 'enum',

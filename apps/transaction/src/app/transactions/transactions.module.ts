@@ -57,9 +57,43 @@ import { RetryOrderConsumer } from './retry-order.consumer';
         }),
         inject: [ConfigService],
       },
+      // {
+      //   name: Packages.NOTIFICATION,
+      //   useFactory: (configService: ConfigService) => ({
+      //     transport: Transport.GRPC,
+      //     options: {
+      //       url: configService.getOrThrow('NOTIFICATION_GRPC_URL'),
+      //       package: Packages.NOTIFICATION,
+      //       protoPath: join(
+      //         __dirname,
+      //         '../../libs/grpc/proto/notification.proto'
+      //       ),
+      //     },
+      //   }),
+      //   inject: [ConfigService],
+      // },
+      {
+        name: Packages.NOTIFICATION,
+        useFactory: (configService: ConfigService) => {
+          const rabbitMqUrl = configService.getOrThrow<string>('RABBIT_MQ_URL');
+          const rabbitMqQueueName = configService.getOrThrow<string>(
+            'RABBIT_MQ_QUEUE_NAME'
+          );
+          return {
+            transport: Transport.RMQ,
+            options: {
+              urls: [rabbitMqUrl],
+              queue: rabbitMqQueueName,
+              queueOptions: {
+                durable: false,
+              },
+            },
+          };
+        },
+        inject: [ConfigService],
+      },
     ]),
     TypeOrmModule.forFeature([ForexTransaction, ForexOrder]),
-
     BullModule.registerQueue({
       name: QUEUE_FOREX_RETRY,
     }),

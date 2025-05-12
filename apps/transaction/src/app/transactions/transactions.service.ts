@@ -18,7 +18,7 @@ import {
   WalletServiceClient,
   WithdrawWalletRequest,
 } from '@square-me/grpc';
-import { ClientGrpc } from '@nestjs/microservices';
+import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
 import { BuyForexInputDto } from './dto/buy-forex-input.dto';
 import Decimal from 'decimal.js';
@@ -34,7 +34,27 @@ import {
 } from '../../typeorm/models/enums';
 import { RetryOrderProducer } from './retry-order.producer';
 
-type BuyForexServiceOptions = BuyForexInputDto & { userId: string };
+type BuyForexServiceOptions = BuyForexInputDto & {
+  userId: string;
+  userEmail: string;
+};
+
+interface TransactionEmailOptions {
+  userEmail: string;
+  targetCurrency: string;
+  orderId: string;
+  transactionId: string;
+  baseCurrency: string;
+}
+
+interface TransactionEmailFailure extends TransactionEmailOptions {
+  type: 'failure';
+}
+interface TransactionEmailSuccess extends TransactionEmailOptions {
+  type: 'success';
+  targetAmount: string;
+  exchangeRate: string;
+}
 
 @Injectable()
 export class TransactionsService implements OnModuleInit {
@@ -45,6 +65,8 @@ export class TransactionsService implements OnModuleInit {
     @Inject(Packages.WALLET) private readonly walletClient: ClientGrpc,
     @Inject(Packages.INTEGRATION)
     private readonly integrationClient: ClientGrpc,
+    @Inject(Packages.NOTIFICATION)
+    private readonly notificationClient: ClientProxy,
     @InjectRepository(ForexTransaction)
     private readonly forexTxnRepo: Repository<ForexTransaction>,
     @InjectRepository(ForexOrder)
@@ -97,17 +119,19 @@ export class TransactionsService implements OnModuleInit {
           userId: forexOrder.userId,
         })
         .pipe(
-          map((res) => this.succeedOrder(forexOrder.id, forexTxn.id, res)),
+          map((res) => this.succeedOrder(forexOrder, forexTxn, res)),
           catchError((err) => {
             switch (err.code) {
               case status.NOT_FOUND:
               case status.INVALID_ARGUMENT:
                 return of(
                   this.failOrder(
-                    forexOrder.id,
-                    forexTxn.id,
-                    err.message,
-                    err.code,
+                    {
+                      forexOrder,
+                      forexTxn,
+                      errMessage: err.message,
+                      errCode: err.code,
+                    },
                     true
                   )
                 );
@@ -116,10 +140,12 @@ export class TransactionsService implements OnModuleInit {
               default:
                 return of(
                   this.failOrder(
-                    forexOrder.id,
-                    forexTxn.id,
-                    err.message,
-                    err.code,
+                    {
+                      forexOrder,
+                      forexTxn,
+                      errMessage: err.message,
+                      errCode: err.code,
+                    },
                     false
                   )
                 );
@@ -131,66 +157,128 @@ export class TransactionsService implements OnModuleInit {
     return buyForexRes;
   }
 
-  async failOrder(
-    orderId: string,
-    transactionId: string,
-    errMessage: string,
-    errCode: status,
-    hardFail = false
+  private createTransactionEmail(
+    options: TransactionEmailFailure | TransactionEmailSuccess
   ) {
-    await this.forexTxnRepo.update(transactionId, {
+    let subject = '';
+    let text = '';
+
+    const { targetCurrency, orderId, baseCurrency } = options;
+
+    if (options.type === 'failure') {
+      subject = 'Forex purchase failed';
+      text = `Your purchase of ${options.targetCurrency}, with order id: ${options.orderId} failed`;
+    } else {
+      const { targetAmount, exchangeRate } = options;
+
+      subject = 'Forex purchase completed';
+      text = `Your purchase of ${targetCurrency}, with order id: ${orderId} succeeded. Your ${targetCurrency} wallet was credited ${targetAmount} at an exchange rate of 1 ${baseCurrency} --> ${exchangeRate} ${targetCurrency}`;
+    }
+
+    return {
+      html: '',
+      text,
+      subject,
+      to: options.userEmail,
+    };
+  }
+
+  async failOrder(
+    {
+      forexOrder,
+      forexTxn,
+      errMessage,
+      errCode,
+    }: {
+      forexOrder: ForexOrder;
+      forexTxn: ForexTransaction;
+      errMessage: string;
+      errCode: status;
+    },
+    hardFail: boolean
+  ) {
+    await this.forexTxnRepo.update(forexTxn.id, {
       status: TransactionStatus.FAILED,
       errorMessage: errMessage,
       errorStatus: errCode,
     });
     if (hardFail) {
-      await this.forexOrderRepo.update(orderId, {
+      await this.forexOrderRepo.update(forexOrder.id, {
         status: OrderStatus.FAILED,
         errorMessage: errMessage,
         errorStatus: errCode,
       });
 
+      await firstValueFrom(
+        this.notificationClient.emit(
+          'send_email',
+          this.createTransactionEmail({
+            type: 'failure',
+            userEmail: forexOrder.userEmail,
+            targetCurrency: forexOrder.targetCurrency,
+            orderId: forexOrder.id,
+            transactionId: forexTxn.id,
+            baseCurrency: forexOrder.baseCurrency,
+          })
+        )
+      );
+
       return {
-        message: 'Permanent failure',
-        forexOrderId: orderId,
-        forexTransactionId: transactionId,
+        message: `Permanent failure: ${errMessage}`,
+        forexOrderId: forexOrder.id,
+        forexTransactionId: forexTxn.id,
       };
     } else {
       await this.retryOrerProducer.enqueue({
-        orderId,
-        transactionId,
+        orderId: forexOrder.id,
+        transactionId: forexTxn.id,
         errCode,
         errMessage,
       });
 
       return {
         message: 'Temporary failure; Retrying order',
-        forexOrderId: orderId,
-        forexTransactionId: transactionId,
+        forexOrderId: forexOrder.id,
+        forexTransactionId: forexTxn.id,
       };
     }
   }
 
   private async succeedOrder(
-    orderId: string,
-    transactionId: string,
+    forexOrder: ForexOrder,
+    forexTxn: ForexTransaction,
     walletResponse: BuyForexResponse
   ) {
     await this.dataSource.transaction(async (manager) => {
-      await manager.update(ForexOrder, orderId, {
+      await manager.update(ForexOrder, forexOrder.id, {
         status: OrderStatus.COMPLETED,
       });
-      await manager.update(ForexTransaction, transactionId, {
+      await manager.update(ForexTransaction, forexTxn.id, {
         status: TransactionStatus.COMPLETED,
         exchangeRate: new Decimal(walletResponse.exchangeRate),
         targetAmount: new Decimal(walletResponse.targetAmount),
       });
     });
 
+    await firstValueFrom(
+      this.notificationClient.emit(
+        'send_email',
+        this.createTransactionEmail({
+          type: 'success',
+          userEmail: forexOrder.userEmail,
+          baseCurrency: forexOrder.baseCurrency,
+          exchangeRate: forexTxn.exchangeRate.toString(),
+          orderId: forexOrder.id,
+          targetAmount: forexTxn.targetAmount.toString(),
+          targetCurrency: forexOrder.targetCurrency,
+          transactionId: forexTxn.id,
+        })
+      )
+    );
     return {
       message: 'Order completed',
-      forexOrderId: orderId,
-      forexTransactionId: transactionId,
+      forexOrderId: forexOrder.id,
+      forexTransactionId: forexTxn.id,
     };
   }
 
@@ -273,6 +361,7 @@ export class TransactionsService implements OnModuleInit {
         targetCurrency: options.targetCurrency,
         amount: new Decimal(options.amount),
         status: OrderStatus.PENDING,
+        userEmail: options.userEmail,
       })
     );
 

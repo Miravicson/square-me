@@ -1,12 +1,9 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class InitialMigration1746899733279 implements MigrationInterface {
-  name = 'InitialMigration1746899733279';
+export class InitialMigration1747043317069 implements MigrationInterface {
+  name = 'InitialMigration1747043317069';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`
-            CREATE TYPE "public"."wallet-service-wallet_transaction_type_enum" AS ENUM('credit', 'debit', 'withdraw', 'fund')
-        `);
     await queryRunner.query(`
             CREATE TABLE "wallet-service-wallet_transaction" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -46,9 +43,6 @@ export class InitialMigration1746899733279 implements MigrationInterface {
         `);
     await queryRunner.query(`
             DROP TABLE "wallet-service-wallet_transaction"
-        `);
-    await queryRunner.query(`
-            DROP TYPE "public"."wallet-service-wallet_transaction_type_enum"
         `);
   }
 }
