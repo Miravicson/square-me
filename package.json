@@ -5,6 +5,7 @@
   "scripts": {
     "prepare": "husky",
     "dev": "nx run-many -t serve -p auth transaction wallet integration notification",
+    "build": "nx run-many -t build -p auth transaction wallet integration notification",
     "migration:run": "nx run-many -t migration:run -p auth transaction wallet",
     "upgrade:nestjs": "npx npm-check-updates -u -f \"/nestjs*/\" ",
     "typeorm": "typeorm-ts-node-commonjs",
