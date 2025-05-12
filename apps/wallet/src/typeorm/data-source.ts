@@ -1,18 +1,20 @@
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { join } from 'path';
-import { DataSource } from 'typeorm';
-import { config } from 'dotenv';
+// import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+// import { join } from 'path';
+// import { DataSource } from 'typeorm';
+// import { config } from 'dotenv';
 
-config();
+// config();
 
-const options = {
-  type: 'postgres',
-  url: process.env.DATABASE_URL,
-  autoLoadEntities: true,
-  entities: [join(__dirname, '**/*.model{.ts,.js}')],
-  migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
-  entityPrefix: process.env.SERVICE_ENTITY_PREFIX,
-  schema: 'public',
-} satisfies TypeOrmModuleOptions;
+// const options = {
+//   type: 'postgres',
+//   url: process.env.DATABASE_URL,
+//   autoLoadEntities: true,
+//   entities: [join(__dirname, '**/*.model{.ts,.js}')],
+//   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
+//   entityPrefix: process.env.SERVICE_ENTITY_PREFIX,
+//   schema: 'public',
+// } satisfies TypeOrmModuleOptions;
 
-export default new DataSource(options);
+// export default new DataSource(options);
+import { dataSource } from '@square-me/typeorm';
+export default dataSource;

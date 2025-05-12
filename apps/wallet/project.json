@@ -9,7 +9,13 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "webpack-cli build",
-        "args": ["node-env=production"]
+        "args": ["node-env=production"],
+        "additionalEntryPoints": [
+          {
+            "entryName": "typeorm-data-source",
+            "entryPath": "apps/wallet/src/typeorm/data-source.ts"
+          }
+        ]
       },
       "configurations": {
         "development": {
@@ -56,6 +62,15 @@
         "cwd": "{projectRoot}",
         "args": ["name"]
       }
+    },
+    "gen:migration": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "typeorm-ts-node-esm migration:generate src/typeorm/migrations/{args.name} --pretty -d dist/apps/wallet/typeorm-data-source",
+        "forwardAllArgs": true,
+        "args": ["name"]
+      },
+      "dependsOn": ["wallet:build", "^build"]
     },
     "migration:run": {
       "executor": "nx:run-commands",
