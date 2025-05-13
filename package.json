@@ -3,7 +3,6 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "prepare": "husky",
     "dev": "nx run-many -t serve -p auth transaction wallet integration notification",
     "build": "nx run-many -t build -p auth transaction wallet integration notification",
     "migration:run": "nx run-many -t migration:run -p auth transaction wallet",
@@ -52,6 +51,7 @@
     "ts-proto": "^2.7.0",
     "tslib": "^2.3.0",
     "typeorm": "^0.3.23",
+    "argon2": "^0.43.0",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
@@ -75,7 +75,6 @@
     "@types/hpp": "^0.2.6",
     "@types/jest": "^29.5.12",
     "@types/node": "~18.16.9",
-    "argon2": "^0.43.0",
     "env-cmd": "^10.1.0",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",

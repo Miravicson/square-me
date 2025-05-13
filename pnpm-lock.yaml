@@ -55,6 +55,9 @@ importers:
       amqplib:
         specifier: ^0.10.8
         version: 0.10.8
+      argon2:
+        specifier: ^0.43.0
+        version: 0.43.0
       axios:
         specifier: ^1.9.0
         version: 1.9.0
@@ -185,9 +188,6 @@ importers:
       '@types/node':
         specifier: ~18.16.9
         version: 18.16.20
-      argon2:
-        specifier: ^0.43.0
-        version: 0.43.0
       env-cmd:
         specifier: ^10.1.0
         version: 10.1.0
@@ -273,8 +273,6 @@ importers:
 
   apps/wallet: {}
 
-  libs/auth-service: {}
-
   libs/grpc:
     dependencies:
       '@grpc/grpc-js':
@@ -290,7 +288,52 @@ importers:
         specifier: ^2.7.0
         version: 2.7.0
 
+  libs/microservice-client:
+    dependencies:
+      '@grpc/grpc-js':
+        specifier: ^1.13.3
+        version: 1.13.3
+      '@grpc/proto-loader':
+        specifier: ^0.7.15
+        version: 0.7.15
+      '@nestjs/microservices':
+        specifier: ^11.1.0
+        version: 11.1.0(@grpc/grpc-js@1.13.3)(@nestjs/common@11.1.0(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@11.1.0)(@nestjs/websockets@11.1.0)(amqp-connection-manager@4.1.14(amqplib@0.10.8))(amqplib@0.10.8)(ioredis@5.6.1)(reflect-metadata@0.1.14)(rxjs@7.8.1)
+      ts-proto:
+        specifier: ^2.7.0
+        version: 2.7.0
+
+  libs/nestjs:
+    dependencies:
+      '@grpc/grpc-js':
+        specifier: ^1.13.3
+        version: 1.13.3
+      '@grpc/proto-loader':
+        specifier: ^0.7.15
+        version: 0.7.15
+      '@nestjs/microservices':
+        specifier: ^11.1.0
+        version: 11.1.0(@grpc/grpc-js@1.13.3)(@nestjs/common@11.1.0(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@11.1.0)(@nestjs/websockets@11.1.0)(amqp-connection-manager@4.1.14(amqplib@0.10.8))(amqplib@0.10.8)(ioredis@5.6.1)(reflect-metadata@0.1.14)(rxjs@7.8.1)
+      ts-proto:
+        specifier: ^2.7.0
+        version: 2.7.0
+
   libs/rabbit-mq: {}
+
+  libs/typeorm:
+    dependencies:
+      '@grpc/grpc-js':
+        specifier: ^1.13.3
+        version: 1.13.3
+      '@grpc/proto-loader':
+        specifier: ^0.7.15
+        version: 0.7.15
+      '@nestjs/microservices':
+        specifier: ^11.1.0
+        version: 11.1.0(@grpc/grpc-js@1.13.3)(@nestjs/common@11.1.0(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.1.14)(rxjs@7.8.1))(@nestjs/core@11.1.0)(@nestjs/websockets@11.1.0)(amqp-connection-manager@4.1.14(amqplib@0.10.8))(amqplib@0.10.8)(ioredis@5.6.1)(reflect-metadata@0.1.14)(rxjs@7.8.1)
+      ts-proto:
+        specifier: ^2.7.0
+        version: 2.7.0
 
 packages:
   '@adobe/css-tools@4.3.3':
