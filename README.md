@@ -6,6 +6,26 @@
 2. Install `pnpm`
 3. Install `Docker` and `docker-compose`
 
+## Starting the app with docker
+
+1. Start the backing services -- Redis, Postgres, RabbitMq, Mailhog
+
+```sh
+docker compose --profile backing-service up
+```
+
+2. Run migrations for auth, transaction and wallet
+
+```sh
+pnpm migration:run
+```
+
+3. Start the microservice app
+
+```sh
+docker compose --profile api up
+```
+
 ## Run tasks
 
 To run the dev server for all the microservice:

@@ -78,11 +78,11 @@ services:
       SWAGGER_PATH: 'swagger'
       SWAGGER_TITLE: 'Auth Service'
       SWAGGER_DESCRIPTION: 'Manages user and authentication'
-      CORS_ORIGINS: http://localhost:4000,http://localhost:3001
+      CORS_ORIGINS: transaction:3001
       JWT_SECRET: TDCYJMDvpGdL+t5qn8nKSQ2NGAM6UL9+QnPy87Ehrlw=
       JWT_EXPIRATION_MS: 28800000
       AUTH_GRPC_SERVICE_URL: auth:3333
-      WALLET_GRPC_SERVICE_URL: localhost:5001
+      WALLET_GRPC_SERVICE_URL: wallet:7777
       INTEGRATION_GRPC_URL: integration:4444
       SERVICE_ENTITY_PREFIX: 'auth-service-'
       DATABASE_URL: postgres://postgres:example@postgres:5432/auth?schema=public
@@ -101,11 +101,71 @@ services:
       PORT: 4444
       EXCHANGE_RATE_API_KEY: '<Insert Key here>'
       EXCHANGE_RATE_URL: 'https://v6.exchangerate-api.com'
-      WALLET_GRPC_SERVICE_URL: localhost:5001
+      WALLET_GRPC_SERVICE_URL: integration:4444
       INTEGRATION_GRPC_URL: integration:4444
       SERVICE_ENTITY_PREFIX: 'auth-service-'
       REDIS_URL: redis://:mypassword@redis:6379/0
     env_file: ./apps/integration/docker.env
+
+  notification:
+    profiles:
+      - 'all'
+      - 'api'
+    build:
+      context: .
+      dockerfile: ./apps/notification/Dockerfile
+    container_name: square_me_notification
+    ports:
+      - '5555:5555'
+    environment:
+      PORT: 5555
+      RABBIT_MQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBIT_MQ_QUEUE_NAME: email-queue
+      EMAIL_HOST: mailhog
+      EMAIL_PORT: 1025
+      EMAIL_FROM: 'Square Me <help@square-me.com>'
+
+  transaction:
+    profiles:
+      - 'all'
+      - 'api'
+    build:
+      context: .
+      dockerfile: ./apps/transaction/Dockerfile
+    container_name: square_me_transaction
+    ports:
+      - '3001:3001'
+    environment:
+      PORT: 3001
+      SWAGGER_PATH: swagger
+      SWAGGER_TITLE: 'Transaction Service'
+      SWAGGER_DESCRIPTION: 'Orchestrates creation of order, debiting of wallet and sending notification'
+      CORS_ORIGINS: auth:3333
+      WALLET_GRPC_SERVICE_URL: wallet:7777
+      AUTH_GRPC_SERVICE_URL: auth:3333
+      INTEGRATION_GRPC_URL: integration:4444
+      DATABASE_URL: postgres://postgres:example@postgres:5432/transaction?schema=public
+      SERVICE_ENTITY_PREFIX: transaction-service-
+      REDIS_URL: redis://:mypassword@redis:6379/0
+      RABBIT_MQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBIT_MQ_QUEUE_NAME: email-queue
+
+  wallet:
+    profiles:
+      - 'all'
+      - 'api'
+    build:
+      context: .
+      dockerfile: ./apps/wallet/Dockerfile
+    container_name: square_me_wallet
+    ports:
+      - '7777:7777'
+    environment:
+      PORT: 7777
+      DATABASE_URL: postgres://postgres:example@postgres:5432/wallet?schema=public
+      WALLET_GRPC_SERVICE_URL: wallet:7777
+      INTEGRATION_GRPC_URL: integration:4444
+      SERVICE_ENTITY_PREFIX: wallet-service-
 
 volumes:
   postgres_data:
