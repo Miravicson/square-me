@@ -1,30 +1,138 @@
-# SquareMe
+# Square Me Microservices Monorepo
 
-## Setup
+This repository contains a set of microservices for the Square Me platform, orchestrated with Docker Compose and managed within an [Nx](https://nx.dev/) monorepo.
 
-1. Install `nodejs "^20.0.0"`
-2. Install `pnpm`
-3. Install `Docker` and `docker-compose`
+## 🧰 Technologies Used & Service Responsibilities
 
-## Starting the app with docker
+| Service              | Tech Stack                                | Purpose                                                                |
+| -------------------- | ----------------------------------------- | ---------------------------------------------------------------------- |
+| **Auth**             | NestJS, gRPC, PostgreSQL                  | Manages user registration, authentication, and authorization.          |
+| **Wallet**           | NestJS, gRPC, PostgreSQL                  | Manages wallets, balances, and funds transfer logic.                   |
+| **Transaction**      | NestJS, gRPC, PostgreSQL, RabbitMQ, Redis | Orchestrates order creation, wallet debit, and notification dispatch.  |
+| **Integration**      | NestJS, gRPC, Redis                       | Fetches exchange rates and handles third-party API communication.      |
+| **Notification**     | NestJS, RabbitMQ                          | Listens to RabbitMQ queues and sends emails through Mailhog.           |
+| **Backing Services** | Postgres, Redis, RabbitMQ, Mailhog        | Provides supporting infrastructure for state management and messaging. |
 
-1. Start the backing services -- Redis, Postgres, RabbitMq, Mailhog
+---
 
-```sh
-docker compose --profile backing-service up
-```
+## 🔗 Service Dependencies & Communication
 
-2. Run migrations for auth, transaction and wallet
+| Service          | Communicates With                       | Communication Medium                |
+| ---------------- | --------------------------------------- | ----------------------------------- |
+| **Auth**         | Wallet, Integration                     | gRPC                                |
+| **Wallet**       | Integration                             | gRPC                                |
+| **Transaction**  | Wallet, Auth, Integration, Notification | gRPC (services) + RabbitMQ (emails) |
+| **Notification** | Transaction                             | RabbitMQ                            |
+| **Integration**  | Wallet                                  | gRPC                                |
 
-```sh
-pnpm migration:run
-```
+---
 
-3. Start the microservice app
+## 🔀 Service Types
 
-```sh
-docker compose --profile api up
-```
+### Transaction Service
+
+- **Role**: Acts as the **central orchestrator** of the system.
+- **Functionality**:
+  - Exposes **HTTP endpoints** for client consumption.
+  - Delegates work to other services via gRPC.
+  - Sends emails by publishing messages to RabbitMQ.
+
+Swagger UI: [http://localhost:3001/swagger](http://localhost:3001/swagger)
+
+---
+
+### Auth Service
+
+- **Role**: Handles authentication and authorization.
+- **Functionality**:
+  - Exposes **HTTP endpoints** for clients (sign up, login, etc.).
+  - Communicates with Wallet and Integration services using gRPC.
+
+Swagger UI: [http://localhost:3000/swagger](http://localhost:3000/swagger)
+
+---
+
+## 🚀 Getting Started
+
+To spin up the entire stack:
+
+1. **Ensure Docker & Docker Compose are installed**.
+2. Clone this repo:
+
+   ```bash
+   git clone https://github.com/your-org/square-me.git
+   cd square-me
+   ```
+
+---
+
+## Architecture Diagram
+
+                                 ┌──────────────┐
+                                 │    Client    │
+                                 └──────┬───────┘
+                                        │
+                         HTTP           │
+                    ┌──────────────────▶│
+                    │                  ▼
+              ┌────────────┐    ┌──────────────┐
+              │   Auth     │    │ Transaction  │
+              │  (HTTP +   │    │   (HTTP +    │
+              │   gRPC)    │    │    gRPC)     │
+              └────┬───────┘    └──────┬───────┘
+                   │                  │
+        gRPC       │                  │     gRPC
+         ┌─────────▼─────┐       ┌────▼────────────┐
+         │    Wallet     │◀──────┤  Integration    │
+         └───────────────┘       └──────┬──────────┘
+                                        │
+                               ┌────────▼─────────┐
+                               │   Notification   │
+                               │   (RabbitMQ)     │
+                               └──────────────────┘
+
+---
+
+## 📬 Mailhog
+
+You can test email delivery locally using **Mailhog**:
+
+- **SMTP**: `localhost:1025`
+- **UI**: [http://localhost:8025](http://localhost:8025)
+
+---
+
+## 🗄️ Database Initialization
+
+- **Postgres** will be initialized using SQL files from `./docker/initdb`.
+- **Redis** and **RabbitMQ** are pre-configured with credentials and ports as defined in the Docker Compose file.
+
+---
+
+## 🧪 Swagger UIs
+
+- **Auth Service Swagger**: [http://localhost:3000/swagger](http://localhost:3000/swagger)
+- **Transaction Service Swagger**: [http://localhost:3001/swagger](http://localhost:3001/swagger)
+
+---
+
+## 📦 Environment Profiles
+
+| Profile           | Description                                |
+| ----------------- | ------------------------------------------ |
+| `api`             | Runs all microservices and dependencies    |
+| `dev`             | Runs only Redis and Postgres               |
+| `backing-service` | Only runs backing infrastructure           |
+| `all`             | Alias to run all services + infrastructure |
+
+---
+
+## 📌 Notes
+
+- Ensure ports `3000`, `3001`, `3333`, `4444`, `5555`, `5672`, `6379`, and `1025` are **free** before running the stack.
+- You can change environment variables for each service inside the `docker-compose.yaml` file.
+
+---
 
 ## Run tasks
 
@@ -81,6 +189,8 @@ To remove app or lib from workspace use:
 ```sh
 npx nx generate @nx/workspace:remove --projectName=<app-or-lib-name>
 ```
+
+---
 
 ## Install Nx Console
 
