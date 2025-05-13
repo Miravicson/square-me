@@ -62,6 +62,51 @@ services:
     volumes:
       - redis_data:/data
 
+  auth:
+    profiles:
+      - 'all'
+      - 'api'
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+    container_name: square_me_auth
+    ports:
+      - '3000:3000'
+      - '3333:3333'
+    environment:
+      PORT: 3000
+      SWAGGER_PATH: 'swagger'
+      SWAGGER_TITLE: 'Auth Service'
+      SWAGGER_DESCRIPTION: 'Manages user and authentication'
+      CORS_ORIGINS: http://localhost:4000,http://localhost:3001
+      JWT_SECRET: TDCYJMDvpGdL+t5qn8nKSQ2NGAM6UL9+QnPy87Ehrlw=
+      JWT_EXPIRATION_MS: 28800000
+      AUTH_GRPC_SERVICE_URL: auth:3333
+      WALLET_GRPC_SERVICE_URL: localhost:5001
+      INTEGRATION_GRPC_URL: integration:4444
+      SERVICE_ENTITY_PREFIX: 'auth-service-'
+      DATABASE_URL: postgres://postgres:example@postgres:5432/auth?schema=public
+
+  integration:
+    profiles:
+      - 'all'
+      - 'api'
+    build:
+      context: .
+      dockerfile: ./apps/integration/Dockerfile
+    container_name: square_me_integration
+    ports:
+      - '4444:4444'
+    environment:
+      PORT: 4444
+      EXCHANGE_RATE_API_KEY: '<Insert Key here>'
+      EXCHANGE_RATE_URL: 'https://v6.exchangerate-api.com'
+      WALLET_GRPC_SERVICE_URL: localhost:5001
+      INTEGRATION_GRPC_URL: integration:4444
+      SERVICE_ENTITY_PREFIX: 'auth-service-'
+      REDIS_URL: redis://:mypassword@redis:6379/0
+    env_file: ./apps/integration/docker.env
+
 volumes:
   postgres_data:
   redis_data:
