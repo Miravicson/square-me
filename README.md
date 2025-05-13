@@ -27,45 +27,6 @@ This repository contains a set of microservices for the Square Me platform, orch
 
 ---
 
-## 🔀 Service Types
-
-### Transaction Service
-
-- **Role**: Acts as the **central orchestrator** of the system.
-- **Functionality**:
-  - Exposes **HTTP endpoints** for client consumption.
-  - Delegates work to other services via gRPC.
-  - Sends emails by publishing messages to RabbitMQ.
-
-Swagger UI: [http://localhost:3001/swagger](http://localhost:3001/swagger)
-
----
-
-### Auth Service
-
-- **Role**: Handles authentication and authorization.
-- **Functionality**:
-  - Exposes **HTTP endpoints** for clients (sign up, login, etc.).
-  - Communicates with Wallet and Integration services using gRPC.
-
-Swagger UI: [http://localhost:3000/swagger](http://localhost:3000/swagger)
-
----
-
-## 🚀 Getting Started
-
-To spin up the entire stack:
-
-1. **Ensure Docker & Docker Compose are installed**.
-2. Clone this repo:
-
-   ```bash
-   git clone https://github.com/your-org/square-me.git
-   cd square-me
-   ```
-
----
-
 ## Architecture Diagram
 
                                  ┌──────────────┐
@@ -90,6 +51,130 @@ To spin up the entire stack:
                                │   Notification   │
                                │   (RabbitMQ)     │
                                └──────────────────┘
+
+---
+
+## 🔀 Service Types
+
+### Transaction Service
+
+- **Role**: Acts as the **central orchestrator** of the system.
+- **Functionality**:
+  - Exposes **HTTP endpoints** for client consumption.
+  - Delegates work to other services via gRPC.
+  - Sends emails by publishing messages to RabbitMQ.
+
+Swagger UI: [http://localhost:3001/swagger](http://localhost:3001/swagger)
+
+The **Transaction Service** acts as the orchestrator in the system, responsible for coordinating actions across multiple services, such as wallet debits, order creation, and sending notifications. It exposes RESTful HTTP endpoints for clients and interacts with other services using gRPC and RabbitMQ.
+
+One of its core features is a **robust retry mechanism** for handling **Forex orders**. Each Forex order can fall into one of the following categories:
+
+- ✅ **Success** – All operations completed successfully.
+- ⚠️ **Temporary Failure** – A recoverable error such as a dependent microservice being unavailable.
+- ❌ **Permanent Failure** – An unrecoverable error, often due to invalid user input (e.g., insufficient wallet balance).
+
+**Retry Logic:**
+
+- Orders that encounter **temporary failures** are **queued** using [BullMQ](https://docs.bullmq.io/), a Redis-backed queue library.
+- These orders are retried **up to 3 times**.
+- If the retries fail, the order is marked as a **permanent failure**.
+
+This design improves user experience by reducing failed transactions caused by intermittent service outages or delays, and ensures eventual consistency in distributed workflows.
+
+---
+
+### Auth Service
+
+- **Role**: Handles authentication and authorization.
+- **Functionality**:
+  - Exposes **HTTP endpoints** for clients (sign up, login, etc.).
+  - Communicates with Wallet and Integration services using gRPC.
+
+Swagger UI: [http://localhost:3000/swagger](http://localhost:3000/swagger)
+
+---
+
+### 🌐 Integration Service
+
+The **Integration Service** is responsible for interfacing with third-party APIs, specifically for **fetching Forex exchange rates**. To ensure fast and efficient access to exchange rate data, the service leverages a **Redis-based caching mechanism**.
+
+**Design Highlights:**
+
+- A **cron job** runs **daily at 6:00 AM**, fetching the latest Forex exchange rates from the third-party API and storing them in Redis.
+- This cached rate table is then used by other services throughout the day.
+
+**Benefits of this Design:**
+
+1. 🚀 **Reduced Latency** – Redis provides ultra-fast in-memory access to exchange rates, which speeds up downstream processes.
+2. 💸 **Lower Costs** – Reduces the number of external API calls, cutting down on API usage fees.
+3. 🔄 **Decoupled Architecture** – Other services retrieve exchange rates directly from Redis, avoiding tight coupling with the third-party API.
+
+**Drawback:**
+
+- ❗ Real-time market fluctuations may not be accurately reflected throughout the day since rates are refreshed only once every 24 hours. This trade-off was made in favor of speed and cost-efficiency.
+
+To spin up the entire stack, follow these steps:
+
+### 1. Prerequisites
+
+- Ensure **Docker** and **Docker Compose** are installed on your machine.
+- Ensure **pnpm** is installed globally. You can install it via:
+
+  ```bash
+  npm install -g pnpm
+  ```
+
+### 2. Clone the repository
+
+### 3. Install Dependencies
+
+At the root of the project, install all monorepo dependencies using:
+
+```bash
+pnpm install
+```
+
+### 4. Configure Integration Service Environment
+
+Navigate to the Integration Service directory and create a .env file with your exchange rate API key:
+
+```bash
+cd apps/integration
+touch docker.env
+```
+
+Then add the following line to the .env file:
+
+```env
+EXCHANGE_RATE_API_KEY=YourActualApiKeyHere
+```
+
+### 5. Start Backing Services
+
+Run the following command from the project root to start Redis, Postgres, and RabbitMQ:
+
+```bash
+docker compose --profile backing-service up
+```
+
+### 6. Run Migrations
+
+Run database migrations to initialize your schema:
+
+```bash
+pnpm migration:run
+```
+
+### 7. Start All Microservices
+
+With the backing services already running, you can now start all microservices:
+
+```bash
+docker compose --profile api up
+```
+
+After following these steps, your development environment should be up and running with all services communicating as expected. 🚀
 
 ---
 
