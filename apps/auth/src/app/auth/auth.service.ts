@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
@@ -23,6 +24,7 @@ interface SetJWTCookieOptions {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(this.constructor.name);
   constructor(
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,
@@ -52,6 +54,7 @@ export class AuthService {
   }
 
   async signup(signupDto: SignUpInputDto, response: Response) {
+    this.logger.log(`Signing up user`);
     const { data: user, error } = await tryCatch(
       this.usersService.createBasicUserOrFail(
         signupDto.email,
@@ -59,6 +62,7 @@ export class AuthService {
       )
     );
     if (error !== null) {
+      this.logger.error(error, error.stack);
       throw new BadRequestException(
         'Could not sign you up, check your credentials and try again'
       );

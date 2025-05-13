@@ -1,26 +1,26 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class InitialMigration1747043281526 implements MigrationInterface {
-  name = 'InitialMigration1747043281526';
+export class InitialMigration1747172533879 implements MigrationInterface {
+  name = 'InitialMigration1747172533879';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-            CREATE TABLE "auth-service-users" (
+            CREATE TABLE "users" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "email" character varying NOT NULL,
                 "password" character varying NOT NULL,
                 "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
                 "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
                 "deletedAt" TIMESTAMP,
-                CONSTRAINT "UQ_c4256c7c4d69292bd65c4a0aa11" UNIQUE ("email"),
-                CONSTRAINT "PK_3232a7dc1f48ba37f800f3d7373" PRIMARY KEY ("id")
+                CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"),
+                CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id")
             )
         `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-            DROP TABLE "auth-service-users"
+            DROP TABLE "users"
         `);
   }
 }

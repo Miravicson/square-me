@@ -1,10 +1,14 @@
+networks:
+  squareme:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+
 services:
   postgres:
-    profiles:
-      - 'backing-service'
-      - 'all'
-      - 'dev'
-      - 'api'
+    profiles: ['backing-service', 'all', 'dev', 'api']
     image: postgres:16.4-alpine
     container_name: square_me_microservices_postgres
     environment:
@@ -14,58 +18,56 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - squareme
+
+  redis:
+    profiles: ['backing-service', 'all', 'dev', 'api']
+    image: redis:latest
+    container_name: square_me_microservices_redis
+    command: redis-server --requirepass mypassword --port 6379 --databases 16
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - squareme
+
+  rabbitmq:
+    profiles: ['backing-service', 'api']
+    image: rabbitmq:3.11-management
+    container_name: square_me_rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - squareme
 
   mailhog:
-    profiles:
-      - backing-service
+    profiles: ['backing-service', 'api']
     image: mailhog/mailhog:latest
-    platform: linux/amd64
     container_name: square_me_mailhog
+    platform: linux/amd64
     restart: always
     ports:
       - '1025:1025'
       - '8025:8025'
     environment:
       MH_STORAGE: memory
-
-  rabbitmq:
-    profiles:
-      - backing-service
-    image: rabbitmq:3-management
-    platform: linux/amd64
-    container_name: square_me_rabbitmq
-    restart: always
-    ports:
-      - '5672:5672' # AMQP protocol
-      - '15672:15672' # Web UI
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-
-  redis:
-    profiles:
-      - 'backing-service'
-      - 'all'
-      - 'dev'
-      - 'api'
-    container_name: square_me_microservices_redis
-    image: redis:latest
-    restart: always
-    ports:
-      - '6379:6379'
-    command: redis-server --requirepass mypassword --port 6379 --databases 16
-    volumes:
-      - redis_data:/data
+    networks:
+      - squareme
 
   auth:
-    profiles:
-      - 'all'
-      - 'api'
+    profiles: ['all', 'api']
     build:
       context: .
       dockerfile: ./apps/auth/Dockerfile
@@ -85,12 +87,17 @@ services:
       WALLET_GRPC_SERVICE_URL: wallet:7777
       INTEGRATION_GRPC_URL: integration:4444
       SERVICE_ENTITY_PREFIX: 'auth-service-'
-      DATABASE_URL: postgres://postgres:example@postgres:5432/auth?schema=public
+      DATABASE_URL: postgres://postgres:example@postgres:5432/auth
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - squareme
 
   integration:
-    profiles:
-      - 'all'
-      - 'api'
+    profiles: ['all', 'api']
     build:
       context: .
       dockerfile: ./apps/integration/Dockerfile
@@ -101,16 +108,19 @@ services:
       PORT: 4444
       EXCHANGE_RATE_API_KEY: '<Insert Key here>'
       EXCHANGE_RATE_URL: 'https://v6.exchangerate-api.com'
-      WALLET_GRPC_SERVICE_URL: integration:4444
+      WALLET_GRPC_SERVICE_URL: wallet:7777
       INTEGRATION_GRPC_URL: integration:4444
-      SERVICE_ENTITY_PREFIX: 'auth-service-'
+      SERVICE_ENTITY_PREFIX: 'integration-service-'
       REDIS_URL: redis://:mypassword@redis:6379/0
     env_file: ./apps/integration/docker.env
+    depends_on:
+      redis:
+        condition: service_started
+    networks:
+      - squareme
 
   notification:
-    profiles:
-      - 'all'
-      - 'api'
+    profiles: ['all', 'api']
     build:
       context: .
       dockerfile: ./apps/notification/Dockerfile
@@ -124,11 +134,16 @@ services:
       EMAIL_HOST: mailhog
       EMAIL_PORT: 1025
       EMAIL_FROM: 'Square Me <help@square-me.com>'
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      mailhog:
+        condition: service_started
+    networks:
+      - squareme
 
   transaction:
-    profiles:
-      - 'all'
-      - 'api'
+    profiles: ['all', 'api']
     build:
       context: .
       dockerfile: ./apps/transaction/Dockerfile
@@ -149,11 +164,24 @@ services:
       REDIS_URL: redis://:mypassword@redis:6379/0
       RABBIT_MQ_URL: amqp://guest:guest@rabbitmq:5672
       RABBIT_MQ_QUEUE_NAME: email-queue
+    depends_on:
+      auth:
+        condition: service_started
+      wallet:
+        condition: service_started
+      integration:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    networks:
+      - squareme
 
   wallet:
-    profiles:
-      - 'all'
-      - 'api'
+    profiles: ['all', 'api']
     build:
       context: .
       dockerfile: ./apps/wallet/Dockerfile
@@ -166,7 +194,8 @@ services:
       WALLET_GRPC_SERVICE_URL: wallet:7777
       INTEGRATION_GRPC_URL: integration:4444
       SERVICE_ENTITY_PREFIX: wallet-service-
-
-volumes:
-  postgres_data:
-  redis_data:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - squareme

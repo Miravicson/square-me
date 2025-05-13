@@ -19,7 +19,6 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
       logging: !isProduction,
       migrationsRun: true,
       schema: 'public',
-      entityPrefix: this.configService.getOrThrow('SERVICE_ENTITY_PREFIX'),
     };
   }
 }

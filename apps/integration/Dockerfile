@@ -35,14 +35,23 @@ COPY jest.preset.js ./
 COPY eslint.config.mjs ./
 COPY webpack.*.config.js ./
 
+
+# Copy monorepo apps and libs package.json
+COPY apps/integration/package.json ./apps/integration/package.json
+COPY libs/nestjs/package.json ./libs/nestjs/package.json
+COPY libs/microservice-client/package.json ./libs/microservice-client/package.json
+COPY libs/grpc/package.json ./libs/grpc/package.json
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
 # Copy monorepo apps and libs
 COPY apps/integration ./apps/integration
 COPY libs/nestjs ./libs/nestjs
 COPY libs/microservice-client ./libs/microservice-client
 COPY libs/grpc ./libs/grpc
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+
 
 # Build the application
 RUN npx nx build integration

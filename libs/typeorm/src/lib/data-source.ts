@@ -11,7 +11,6 @@ const options = {
   autoLoadEntities: true,
   entities: [join(__dirname, '**/*.model{.ts,.js}')],
   migrations: [join(__dirname, 'migrations', '*{.ts,.js}')],
-  entityPrefix: process.env.SERVICE_ENTITY_PREFIX,
   schema: 'public',
 } satisfies TypeOrmModuleOptions;
 
