@@ -34,6 +34,11 @@ import {
 } from '../../typeorm/models/enums';
 import { RetryOrderProducer } from './retry-order.producer';
 import { NOTIFICATION_CLIENT } from '@square-me/microservice-client';
+import {
+  paginate,
+  Pagination,
+  IPaginationOptions,
+} from 'nestjs-typeorm-paginate';
 
 type BuyForexServiceOptions = BuyForexInputDto & {
   userId: string;
@@ -79,6 +84,12 @@ export class TransactionsService implements OnModuleInit {
   onModuleInit() {
     this.getOrCreateWalletService();
     this.getOrCreateIntegrationService();
+  }
+
+  async paginateForexOrders(
+    options: IPaginationOptions
+  ): Promise<Pagination<ForexOrder>> {
+    return paginate<ForexOrder>(this.forexOrderRepo, options);
   }
 
   private getOrCreateWalletService() {
@@ -375,5 +386,17 @@ export class TransactionsService implements OnModuleInit {
 
   async withdrawWallet(userId: string, walletId: string, amount: string) {
     return await this.processWalletWithdrawal({ userId, walletId, amount });
+  }
+
+  async getManyForexOrder(
+    userId: string,
+    { page, limit }: { page: number; limit: number }
+  ) {
+    const queryBuilder = this.forexOrderRepo
+      .createQueryBuilder('f')
+      .where('f.userId = :id', { id: userId })
+      .orderBy('f.createdAt', 'DESC');
+
+    return paginate<ForexOrder>(queryBuilder, { page, limit });
   }
 }

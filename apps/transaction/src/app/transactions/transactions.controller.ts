@@ -1,4 +1,12 @@
-import { Body, Controller, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCookieAuth,
@@ -12,6 +20,7 @@ import { ResponseErrorEntity, ValidationErrorEntity } from '@square-me/nestjs';
 import { TransactionsService } from './transactions.service';
 import { FundWalletInputDto } from './dto/fund-wallet-input.dto';
 import { WithdrawWalletInputDto } from './dto/debit-wallet-input.dto';
+import { GetManyForexOrdersInputDto } from './dto/get-many-forex-orders-input.dto';
 @Controller({ version: '1', path: 'transactions' })
 @UseGuards(AuthServiceGuard)
 @ApiTags('Transactions')
@@ -67,5 +76,13 @@ export class TransactionsController {
       inputDto.amount
     );
     return response;
+  }
+
+  @Get('forex-orders')
+  async getManyForexOrder(
+    @CurrentUser() user: GrpcUser,
+    @Query() inputDto: GetManyForexOrdersInputDto
+  ) {
+    return this.transactionService.getManyForexOrder(user.id, inputDto);
   }
 }
