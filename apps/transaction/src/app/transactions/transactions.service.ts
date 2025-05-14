@@ -39,6 +39,8 @@ import {
   Pagination,
   IPaginationOptions,
 } from 'nestjs-typeorm-paginate';
+import { ForexOrderEntity } from './entities/forex-order.entity';
+import { ForexTransactionEntity } from './entities/forex-transaction.entity';
 
 type BuyForexServiceOptions = BuyForexInputDto & {
   userId: string;
@@ -397,6 +399,31 @@ export class TransactionsService implements OnModuleInit {
       .where('f.userId = :id', { id: userId })
       .orderBy('f.createdAt', 'DESC');
 
-    return paginate<ForexOrder>(queryBuilder, { page, limit });
+    const result = await paginate<ForexOrder>(queryBuilder, { page, limit });
+    return {
+      ...result.meta,
+      items: result.items.map((item) => new ForexOrderEntity(item)),
+    };
+  }
+  async getManyForexTransactions(
+    userId: string,
+    { page, limit }: { page: number; limit: number }
+  ) {
+    const queryBuilder = this.forexTxnRepo
+      .createQueryBuilder('f')
+      .where('f.userId = :id', { id: userId })
+      .andWhere('f.status IN (:...status)', {
+        status: [TransactionStatus.COMPLETED, TransactionStatus.INITIATED],
+      })
+      .orderBy('f.createdAt', 'DESC');
+
+    const result = await paginate<ForexTransaction>(queryBuilder, {
+      page,
+      limit,
+    });
+    return {
+      ...result.meta,
+      items: result.items.map((item) => new ForexTransactionEntity(item)),
+    };
   }
 }

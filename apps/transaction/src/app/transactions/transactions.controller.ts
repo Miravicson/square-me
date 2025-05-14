@@ -21,6 +21,9 @@ import { TransactionsService } from './transactions.service';
 import { FundWalletInputDto } from './dto/fund-wallet-input.dto';
 import { WithdrawWalletInputDto } from './dto/debit-wallet-input.dto';
 import { GetManyForexOrdersInputDto } from './dto/get-many-forex-orders-input.dto';
+import { ApiPaginatedResponse } from './entities/api-paginated-response';
+import { ForexOrderEntity } from './entities/forex-order.entity';
+import { ForexTransactionEntity } from './entities/forex-transaction.entity';
 @Controller({ version: '1', path: 'transactions' })
 @UseGuards(AuthServiceGuard)
 @ApiTags('Transactions')
@@ -78,11 +81,23 @@ export class TransactionsController {
     return response;
   }
 
+  @ApiCookieAuth()
+  @ApiPaginatedResponse(ForexOrderEntity)
   @Get('forex-orders')
   async getManyForexOrder(
     @CurrentUser() user: GrpcUser,
     @Query() inputDto: GetManyForexOrdersInputDto
   ) {
     return this.transactionService.getManyForexOrder(user.id, inputDto);
+  }
+
+  @ApiCookieAuth()
+  @ApiPaginatedResponse(ForexTransactionEntity)
+  @Get('forex-transactions')
+  async getManyForexTransactions(
+    @CurrentUser() user: GrpcUser,
+    @Query() inputDto: GetManyForexOrdersInputDto
+  ) {
+    return this.transactionService.getManyForexTransactions(user.id, inputDto);
   }
 }

@@ -13,7 +13,6 @@ export class UserEntity implements Users {
   @ApiHideProperty()
   @Exclude()
   password: string;
-
   constructor(data: Partial<UserEntity> | null) {
     if (data !== null) {
       Object.assign(this, data);
