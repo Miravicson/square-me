@@ -32,7 +32,7 @@ export class ExchangeRateService implements OnModuleInit {
     );
 
     if (!isInitialized) {
-      await this.refreshAllExchangeRates('USD');
+      await tryCatch(this.refreshAllExchangeRates('USD'));
     }
   }
 

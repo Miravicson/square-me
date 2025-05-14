@@ -40,7 +40,7 @@ services:
       - squareme
 
   rabbitmq:
-    profiles: ['backing-service', 'api']
+    profiles: ['backing-service', 'api', 'all', 'dev']
     image: rabbitmq:3.11-management
     container_name: square_me_rabbitmq
     ports:
@@ -53,7 +53,7 @@ services:
       - squareme
 
   mailhog:
-    profiles: ['backing-service', 'api']
+    profiles: ['backing-service', 'api', 'all']
     image: mailhog/mailhog:latest
     container_name: square_me_mailhog
     platform: linux/amd64
@@ -106,7 +106,6 @@ services:
       - '4444:4444'
     environment:
       PORT: 4444
-      EXCHANGE_RATE_API_KEY: '<Insert Key here>'
       EXCHANGE_RATE_URL: 'https://v6.exchangerate-api.com'
       WALLET_GRPC_SERVICE_URL: wallet:7777
       INTEGRATION_GRPC_URL: integration:4444

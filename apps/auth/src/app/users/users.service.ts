@@ -69,7 +69,7 @@ export class UsersService implements OnModuleInit {
         this.walletService.getAllUserWallets({ userId }).pipe(
           map((res) => res),
           catchError((err) => {
-            this.logger.error(error);
+            this.logger.error(err);
             if (err.code === status.NOT_FOUND) {
               throw new NotFoundException(err.message);
             }
