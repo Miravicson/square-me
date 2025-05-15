@@ -133,6 +133,8 @@ services:
       EMAIL_HOST: mailhog
       EMAIL_PORT: 1025
       EMAIL_FROM: 'Square Me <help@square-me.com>'
+      EMAIL_USERNAME: mailhog
+      EMAIL_PASSWORD: mailhog
     depends_on:
       rabbitmq:
         condition: service_started
