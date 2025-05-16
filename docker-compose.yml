@@ -5,6 +5,7 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  rabbitmq_data:
 
 services:
   postgres:
@@ -49,6 +50,8 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
       - squareme
 
