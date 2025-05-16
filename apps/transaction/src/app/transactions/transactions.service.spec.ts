@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionsService } from './transactions.service';
-import { Packages } from '@square-me/grpc';
+import { GrpcUser, Packages } from '@square-me/grpc';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ForexTransaction } from '../../typeorm/models/forex-transaction.model';
 import { ForexOrder } from '../../typeorm/models/forex-order.model';
@@ -149,9 +149,10 @@ describe('TransactionsService', () => {
       const processWalletFunding = jest
         .spyOn<any, any>(service as any, 'processWalletFunding')
         .mockResolvedValue('funded');
-      const result = await service.fundWallet('user1', 'wallet1', '100');
-      expect(processWalletFunding).toHaveBeenCalledWith({
-        userId: 'user1',
+
+      const user: GrpcUser = { id: 'user1', email: 'user1@company.com' };
+      const result = await service.fundWallet(user, 'wallet1', '100');
+      expect(processWalletFunding).toHaveBeenCalledWith(user, {
         walletId: 'wallet1',
         amount: '100',
       });
@@ -164,9 +165,9 @@ describe('TransactionsService', () => {
       const processWalletWithdrawal = jest
         .spyOn<any, any>(service as any, 'processWalletWithdrawal')
         .mockResolvedValue('withdrawn');
-      const result = await service.withdrawWallet('user1', 'wallet1', '50');
-      expect(processWalletWithdrawal).toHaveBeenCalledWith({
-        userId: 'user1',
+      const user: GrpcUser = { id: 'user1', email: 'user1@company.com' };
+      const result = await service.withdrawWallet(user, 'wallet1', '50');
+      expect(processWalletWithdrawal).toHaveBeenCalledWith(user, {
         walletId: 'wallet1',
         amount: '50',
       });

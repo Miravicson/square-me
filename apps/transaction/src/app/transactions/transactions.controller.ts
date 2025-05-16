@@ -57,7 +57,7 @@ export class TransactionsController {
     @CurrentUser() user: GrpcUser
   ) {
     const response = await this.transactionService.fundWallet(
-      user.id,
+      user,
       walletId,
       inputDto.amount
     );
@@ -74,7 +74,7 @@ export class TransactionsController {
     @CurrentUser() user: GrpcUser
   ) {
     const response = await this.transactionService.withdrawWallet(
-      user.id,
+      user,
       walletId,
       inputDto.amount
     );

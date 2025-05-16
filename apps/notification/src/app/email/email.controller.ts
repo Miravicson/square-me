@@ -1,7 +1,7 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { NotificationEmailEvent } from './interfaces/notification-email-event.interface';
+import { NotificationEmailEvent } from '@square-me/microservice-client';
 
 @Controller()
 export class EmailController {

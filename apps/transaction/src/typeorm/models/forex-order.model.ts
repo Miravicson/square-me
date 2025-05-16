@@ -43,8 +43,6 @@ export class ForexOrder {
   @Column({
     type: 'decimal',
     default: 0.0,
-    precision: 10,
-    scale: 2,
     transformer: new DecimalTransformer(),
   })
   @Transform(DecimalToString(), { toPlainOnly: true })

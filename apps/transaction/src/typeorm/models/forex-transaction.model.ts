@@ -36,8 +36,6 @@ export class ForexTransaction {
   @Column({
     type: 'decimal',
     default: 0.0,
-    precision: 10,
-    scale: 2,
     transformer: new DecimalTransformer(),
   })
   @Transform(DecimalToString(), { toPlainOnly: true })
@@ -46,19 +44,15 @@ export class ForexTransaction {
   @Column({
     type: 'decimal',
     default: 0.0,
-    precision: 10,
-    scale: 2,
     transformer: new DecimalTransformer(),
     nullable: true,
   })
-  @Transform(DecimalToString(), { toPlainOnly: true })
+  @Transform(DecimalToString(5), { toPlainOnly: true })
   exchangeRate: Decimal | null;
 
   @Column({
     type: 'decimal',
     default: 0.0,
-    precision: 10,
-    scale: 2,
     transformer: new DecimalTransformer(),
     nullable: true,
   })

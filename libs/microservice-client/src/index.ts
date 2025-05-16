@@ -4,5 +4,7 @@ export * from './lib/auth/grpc-client';
 export * from './lib/auth/guards/auth-service.guard';
 export * from './lib/integration/grpc-client';
 export * from './lib/microservice-client.module';
+export * from './lib/notification/interfaces/notification-email-event.interface';
+export * from './lib/notification/interfaces/notification-email-response.interface';
 export * from './lib/notification/rabbit-mq-client';
 export * from './lib/wallet/grpc-client';

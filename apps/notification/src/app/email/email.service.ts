@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { NotificationEmailResponse } from './interfaces/notification-email-response.interface';
-import { NotificationEmailEvent } from './interfaces/notification-email-event.interface';
 import { MailerService } from '@nestjs-modules/mailer';
+import {
+  NotificationEmailEvent,
+  NotificationEmailResponse,
+} from '@square-me/microservice-client';
 
 @Injectable()
 export class EmailService {

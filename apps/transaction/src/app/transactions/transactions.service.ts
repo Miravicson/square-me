@@ -11,6 +11,7 @@ import { tryCatch } from '@square-me/nestjs';
 import {
   BuyForexResponse,
   FundWalletRequest,
+  GrpcUser,
   INTEGRATION_SERVICE_NAME,
   IntegrationServiceClient,
   Packages,
@@ -33,7 +34,11 @@ import {
   TransactionStatus,
 } from '../../typeorm/models/enums';
 import { RetryOrderProducer } from './retry-order.producer';
-import { NOTIFICATION_CLIENT } from '@square-me/microservice-client';
+import {
+  NOTIFICATION_CLIENT,
+  NotificationEmailEvent,
+  NotificationEmailResponse,
+} from '@square-me/microservice-client';
 import {
   paginate,
   Pagination,
@@ -110,6 +115,15 @@ export class TransactionsService implements OnModuleInit {
     }
   }
 
+  private async notifyUser(data: NotificationEmailEvent) {
+    await firstValueFrom(
+      this.notificationClient.emit<
+        NotificationEmailResponse,
+        NotificationEmailEvent
+      >('send_email', data)
+    );
+  }
+
   async processForexPurchase(forexOrder: ForexOrder) {
     const forexTxn = await this.forexTxnRepo.save(
       this.forexTxnRepo.create({
@@ -173,7 +187,7 @@ export class TransactionsService implements OnModuleInit {
 
   private createTransactionEmail(
     options: TransactionEmailFailure | TransactionEmailSuccess
-  ) {
+  ): NotificationEmailEvent {
     let subject = '';
     let text = '';
 
@@ -223,19 +237,16 @@ export class TransactionsService implements OnModuleInit {
         errorStatus: errCode,
       });
 
-      await firstValueFrom(
-        this.notificationClient.emit(
-          'send_email',
-          this.createTransactionEmail({
-            type: 'failure',
-            userEmail: forexOrder.userEmail,
-            targetCurrency: forexOrder.targetCurrency,
-            orderId: forexOrder.id,
-            transactionId: forexTxn.id,
-            baseCurrency: forexOrder.baseCurrency,
-          })
-        )
-      );
+      const emailPayload = this.createTransactionEmail({
+        type: 'failure',
+        userEmail: forexOrder.userEmail,
+        targetCurrency: forexOrder.targetCurrency,
+        orderId: forexOrder.id,
+        transactionId: forexTxn.id,
+        baseCurrency: forexOrder.baseCurrency,
+      });
+
+      await this.notifyUser(emailPayload);
 
       return {
         message: `Permanent failure: ${errMessage}`,
@@ -274,21 +285,18 @@ export class TransactionsService implements OnModuleInit {
       });
     });
 
-    await firstValueFrom(
-      this.notificationClient.emit(
-        'send_email',
-        this.createTransactionEmail({
-          type: 'success',
-          userEmail: forexOrder.userEmail,
-          baseCurrency: forexOrder.baseCurrency,
-          exchangeRate: forexTxn.exchangeRate.toString(),
-          orderId: forexOrder.id,
-          targetAmount: forexTxn.targetAmount.toString(),
-          targetCurrency: forexOrder.targetCurrency,
-          transactionId: forexTxn.id,
-        })
-      )
-    );
+    const emailPayload = this.createTransactionEmail({
+      type: 'success',
+      userEmail: forexOrder.userEmail,
+      baseCurrency: forexOrder.baseCurrency,
+      exchangeRate: forexTxn.exchangeRate.toString(),
+      orderId: forexOrder.id,
+      targetAmount: forexTxn.targetAmount.toString(),
+      targetCurrency: forexOrder.targetCurrency,
+      transactionId: forexTxn.id,
+    });
+
+    await this.notifyUser(emailPayload);
     return {
       message: 'Order completed',
       forexOrderId: forexOrder.id,
@@ -296,10 +304,13 @@ export class TransactionsService implements OnModuleInit {
     };
   }
 
-  private async processWalletFunding(payload: FundWalletRequest) {
+  private async processWalletFunding(
+    user: GrpcUser,
+    payload: Omit<FundWalletRequest, 'userId'>
+  ) {
     const { data: res, error } = await tryCatch(
       firstValueFrom(
-        this.walletService.fundWallet(payload).pipe(
+        this.walletService.fundWallet({ ...payload, userId: user.id }).pipe(
           map((res) => res),
           catchError((err) => {
             this.logger.error(err);
@@ -325,16 +336,32 @@ export class TransactionsService implements OnModuleInit {
     );
 
     if (error) {
+      this.notifyUser({
+        html: '',
+        text: 'Wallet funding was unsucessful',
+        subject: 'Wallet funding unsucessful',
+        to: user.email,
+      });
       throw error;
     }
+
+    this.notifyUser({
+      html: '',
+      subject: 'Wallet funding was successful',
+      text: `Funded successfully wallet of Id ${payload.walletId}, currency: ${res.currency} with amount ${payload.amount}. Your new balance is ${res.balance}}`,
+      to: user.email,
+    });
 
     return res;
   }
 
-  private async processWalletWithdrawal(payload: WithdrawWalletRequest) {
+  private async processWalletWithdrawal(
+    user: GrpcUser,
+    payload: Omit<WithdrawWalletRequest, 'userId'>
+  ) {
     const { data: res, error } = await tryCatch(
       firstValueFrom(
-        this.walletService.withdrawWallet(payload).pipe(
+        this.walletService.withdrawWallet({ ...payload, userId: user.id }).pipe(
           map((res) => res),
           catchError((err) => {
             this.logger.error(err);
@@ -351,7 +378,7 @@ export class TransactionsService implements OnModuleInit {
               }
               default:
                 throw new InternalServerErrorException(
-                  'Unable to complete funding. Please try again later'
+                  'Unable to complete withdrawal. Please try again later'
                 );
             }
           })
@@ -360,8 +387,21 @@ export class TransactionsService implements OnModuleInit {
     );
 
     if (error) {
+      this.notifyUser({
+        html: '',
+        text: 'Wallet withdrawal was unsucessful',
+        subject: 'Wallet withdrawal unsucessful',
+        to: user.email,
+      });
       throw error;
     }
+
+    this.notifyUser({
+      html: '',
+      subject: 'Wallet withdrawal was successful',
+      text: `Withdrew successfully from wallet of Id ${payload.walletId}, currency: ${res.currency}, amount ${payload.amount}. Your new balance is ${res.balance}}`,
+      to: user.email,
+    });
 
     return res;
   }
@@ -382,12 +422,12 @@ export class TransactionsService implements OnModuleInit {
     return this.processForexPurchase(forexOrder);
   }
 
-  async fundWallet(userId: string, walletId: string, amount: string) {
-    return await this.processWalletFunding({ userId, walletId, amount });
+  async fundWallet(user: GrpcUser, walletId: string, amount: string) {
+    return await this.processWalletFunding(user, { walletId, amount });
   }
 
-  async withdrawWallet(userId: string, walletId: string, amount: string) {
-    return await this.processWalletWithdrawal({ userId, walletId, amount });
+  async withdrawWallet(user: GrpcUser, walletId: string, amount: string) {
+    return await this.processWalletWithdrawal(user, { walletId, amount });
   }
 
   async getManyForexOrder(
