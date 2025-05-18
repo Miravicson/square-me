@@ -274,14 +274,17 @@ export class TransactionsService implements OnModuleInit {
     forexTxn: ForexTransaction,
     walletResponse: BuyForexResponse
   ) {
+    const exchangeRate = new Decimal(walletResponse.exchangeRate);
+    const targetAmount = new Decimal(walletResponse.targetAmount);
     await this.dataSource.transaction(async (manager) => {
       await manager.update(ForexOrder, forexOrder.id, {
         status: OrderStatus.COMPLETED,
       });
+
       await manager.update(ForexTransaction, forexTxn.id, {
         status: TransactionStatus.COMPLETED,
-        exchangeRate: new Decimal(walletResponse.exchangeRate),
-        targetAmount: new Decimal(walletResponse.targetAmount),
+        exchangeRate,
+        targetAmount,
       });
     });
 
@@ -289,9 +292,9 @@ export class TransactionsService implements OnModuleInit {
       type: 'success',
       userEmail: forexOrder.userEmail,
       baseCurrency: forexOrder.baseCurrency,
-      exchangeRate: forexTxn.exchangeRate.toString(),
+      exchangeRate: exchangeRate.toFixed(4),
       orderId: forexOrder.id,
-      targetAmount: forexTxn.targetAmount.toString(),
+      targetAmount: targetAmount.toFixed(2),
       targetCurrency: forexOrder.targetCurrency,
       transactionId: forexTxn.id,
     });

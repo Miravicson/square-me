@@ -24,7 +24,7 @@ import {
 } from '../../typeorm/models/wallet-transactions.model';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import Decimal from 'decimal.js';
-import { tryCatch } from '@square-me/nestjs';
+import { Result, tryCatch } from '@square-me/nestjs';
 import { ClientGrpc, RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { catchError, firstValueFrom, map } from 'rxjs';
@@ -242,60 +242,65 @@ export class WalletService implements OnModuleInit {
     return this.createWalletEntity(wallet);
   }
 
-  async buyForex(request: BuyForexRequest): Promise<BuyForexResponse> {
-    if (!this.integrationService) {
-      this.onModuleInit();
+  private async getOrCreateTargetWalletInTxn(
+    txnManager: EntityManager,
+    request: BuyForexRequest
+  ): Promise<Wallet> {
+    const { data, error } = await tryCatch(
+      this.walletRepository.findOneOrFail({
+        where: { currency: request.targetCurrency },
+      })
+    );
+
+    if (error) {
+      const wallet = await this.walletRepository.create({
+        balance: new Decimal(0.0),
+        currency: request.targetCurrency,
+        userId: request.userId,
+      });
+
+      await txnManager.save(wallet);
+      return wallet;
     }
+    return data;
+  }
 
-    const exchangeRate = await this.fetchExchangeRate({
-      from: request.baseCurrency,
-      to: request.targetCurrency,
-    });
-
-    const [findBaseWalletResult, findTargetWalletResult] = await Promise.all([
-      tryCatch(
-        this.walletRepository.findOneOrFail({
-          where: { currency: request.baseCurrency },
-        })
-      ),
-      tryCatch(
-        this.walletRepository.findOneOrFail({
-          where: { currency: request.targetCurrency },
-        })
-      ),
-    ]);
-
-    if (findBaseWalletResult.error) {
+  private async findBaseWalletOrFail(currency: string) {
+    const { data, error } = await tryCatch(
+      this.walletRepository.findOneOrFail({
+        where: { currency },
+      })
+    );
+    if (error) {
       throw new RpcException({
         code: status.NOT_FOUND,
         message: 'Could not find base wallet',
       });
     }
 
+    return data;
+  }
+
+  async buyForex(request: BuyForexRequest): Promise<BuyForexResponse> {
+    if (!this.integrationService) {
+      this.onModuleInit();
+    }
+    const baseWallet = await this.findBaseWalletOrFail(request.baseCurrency);
     const amount = new Decimal(request.amount);
-    const targetWalletAmount = amount.mul(exchangeRate);
-    const baseWallet = findBaseWalletResult.data;
-
     this.validateSufficientFund(baseWallet, amount);
+    const exchangeRate = await this.fetchExchangeRate({
+      from: request.baseCurrency,
+      to: request.targetCurrency,
+    });
 
-    const getOrCreateTargetWallet = async (manager: EntityManager) => {
-      if (findTargetWalletResult.error) {
-        const wallet = await this.walletRepository.create({
-          balance: new Decimal(0.0),
-          currency: request.targetCurrency,
-          userId: request.userId,
-        });
-
-        await manager.save(wallet);
-        return wallet;
-      }
-      return findTargetWalletResult.data;
-    };
+    const targetWalletAmount = amount.mul(exchangeRate);
 
     const { error: txnErr } = await tryCatch(
       this.dataSource.transaction(async (manager) => {
-        const targetWallet = await getOrCreateTargetWallet(manager);
-        const targetWalletAmount = amount.mul(exchangeRate);
+        const targetWallet = await this.getOrCreateTargetWalletInTxn(
+          manager,
+          request
+        );
         baseWallet.balance = baseWallet.balance.minus(amount);
         targetWallet.balance = targetWallet.balance.plus(targetWalletAmount);
 
@@ -332,11 +337,13 @@ export class WalletService implements OnModuleInit {
       });
     }
 
-    return {
+    const response = {
       message: 'success',
       success: true,
-      exchangeRate: exchangeRate.toString(),
-      targetAmount: targetWalletAmount.toString(),
+      exchangeRate: exchangeRate.valueOf(),
+      targetAmount: targetWalletAmount.valueOf(),
     };
+    this.logger.log(`Buy forex response ${response}`);
+    return response;
   }
 }

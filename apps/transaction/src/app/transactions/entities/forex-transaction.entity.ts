@@ -23,7 +23,7 @@ export class ForexTransactionEntity implements ForexTransaction {
   @DecimalToString()
   amount: Decimal;
 
-  @DecimalToString()
+  @DecimalToString(5)
   exchangeRate: Decimal;
   @DecimalToString()
   targetAmount: Decimal;
