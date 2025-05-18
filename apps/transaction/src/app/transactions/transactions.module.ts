@@ -15,9 +15,6 @@ import { RetryOrderConsumer } from './retry-order.consumer';
 
 @Module({
   imports: [
-    MicroserviceClientModule.register({
-      clients: ['auth', 'wallet', 'integration', 'notification'],
-    }),
     TypeOrmModule.forFeature([ForexTransaction, ForexOrder]),
     BullModule.registerQueue({
       name: QUEUE_FOREX_RETRY,

@@ -4,6 +4,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { LoggerModule } from '@square-me/nestjs';
 import { BullModule } from '@nestjs/bullmq';
 import { TypeormModule } from '@square-me/typeorm';
+import { MicroserviceClientModule } from '@square-me/microservice-client';
 
 @Module({
   imports: [
@@ -18,6 +19,9 @@ import { TypeormModule } from '@square-me/typeorm';
         },
       }),
       inject: [ConfigService],
+    }),
+    MicroserviceClientModule.register({
+      clients: ['auth', 'wallet', 'integration', 'notification'],
     }),
   ],
 })

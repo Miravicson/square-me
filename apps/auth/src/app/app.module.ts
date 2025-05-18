@@ -5,9 +5,11 @@ import { UsersModule } from './users/users.module';
 import { LoggerModule } from '@square-me/nestjs';
 
 import { TypeormModule } from '@square-me/typeorm';
+import { MicroserviceClientModule } from '@square-me/microservice-client';
 
 @Module({
   imports: [
+    MicroserviceClientModule.register({ clients: ['wallet', 'integration'] }),
     LoggerModule,
     ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
