@@ -19,7 +19,7 @@ import {
   WalletServiceClient,
   WithdrawWalletRequest,
 } from '@square-me/grpc';
-import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
+import { ClientGrpc } from '@nestjs/microservices';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
 import { BuyForexInputDto } from './dto/buy-forex-input.dto';
 import Decimal from 'decimal.js';
@@ -35,9 +35,8 @@ import {
 } from '../../typeorm/models/enums';
 import { RetryOrderProducer } from './retry-order.producer';
 import {
-  NOTIFICATION_CLIENT,
   NotificationEmailEvent,
-  NotificationEmailResponse,
+  NotificationService,
 } from '@square-me/microservice-client';
 import {
   paginate,
@@ -78,8 +77,7 @@ export class TransactionsService implements OnModuleInit {
     @Inject(Packages.WALLET) private readonly walletClient: ClientGrpc,
     @Inject(Packages.INTEGRATION)
     private readonly integrationClient: ClientGrpc,
-    @Inject(NOTIFICATION_CLIENT)
-    private readonly notificationClient: ClientProxy,
+    private readonly notificationService: NotificationService,
     @InjectRepository(ForexTransaction)
     private readonly forexTxnRepo: Repository<ForexTransaction>,
     @InjectRepository(ForexOrder)
@@ -113,15 +111,6 @@ export class TransactionsService implements OnModuleInit {
           INTEGRATION_SERVICE_NAME
         );
     }
-  }
-
-  private async notifyUser(data: NotificationEmailEvent) {
-    await firstValueFrom(
-      this.notificationClient.emit<
-        NotificationEmailResponse,
-        NotificationEmailEvent
-      >('send_email', data)
-    );
   }
 
   async processForexPurchase(forexOrder: ForexOrder) {
@@ -246,7 +235,7 @@ export class TransactionsService implements OnModuleInit {
         baseCurrency: forexOrder.baseCurrency,
       });
 
-      await this.notifyUser(emailPayload);
+      await this.notificationService.notifyUser(emailPayload);
 
       return {
         message: `Permanent failure: ${errMessage}`,
@@ -299,7 +288,7 @@ export class TransactionsService implements OnModuleInit {
       transactionId: forexTxn.id,
     });
 
-    await this.notifyUser(emailPayload);
+    await this.notificationService.notifyUser(emailPayload);
     return {
       message: 'Order completed',
       forexOrderId: forexOrder.id,
@@ -339,7 +328,7 @@ export class TransactionsService implements OnModuleInit {
     );
 
     if (error) {
-      this.notifyUser({
+      this.notificationService.notifyUser({
         html: '',
         text: 'Wallet funding was unsucessful',
         subject: 'Wallet funding unsucessful',
@@ -348,7 +337,7 @@ export class TransactionsService implements OnModuleInit {
       throw error;
     }
 
-    this.notifyUser({
+    this.notificationService.notifyUser({
       html: '',
       subject: 'Wallet funding was successful',
       text: `Funded successfully wallet of Id ${payload.walletId}, currency: ${res.currency} with amount ${payload.amount}. Your new balance is ${res.balance}}`,
@@ -390,7 +379,7 @@ export class TransactionsService implements OnModuleInit {
     );
 
     if (error) {
-      this.notifyUser({
+      this.notificationService.notifyUser({
         html: '',
         text: 'Wallet withdrawal was unsucessful',
         subject: 'Wallet withdrawal unsucessful',
@@ -399,7 +388,7 @@ export class TransactionsService implements OnModuleInit {
       throw error;
     }
 
-    this.notifyUser({
+    this.notificationService.notifyUser({
       html: '',
       subject: 'Wallet withdrawal was successful',
       text: `Withdrew successfully from wallet of Id ${payload.walletId}, currency: ${res.currency}, amount ${payload.amount}. Your new balance is ${res.balance}}`,

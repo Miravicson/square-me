@@ -1,27 +1,16 @@
-import { DynamicModule, Module } from '@nestjs/common';
-import { authGrpcClientModuleConfig } from './auth/grpc-client';
-import { walletGrpcClientModuleConfig } from './wallet/grpc-client';
-import { notificationRMqClientModuleConfig } from './notification/rabbit-mq-client';
-import { integrationGrpcClientModuleConfig } from './integration/grpc-client';
+import { DynamicModule, Global, Module, Provider } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import {
   ClientsModule,
   ClientsModuleAsyncOptions,
 } from '@nestjs/microservices';
-
-const clientModules = {
-  auth: authGrpcClientModuleConfig,
-  wallet: walletGrpcClientModuleConfig,
-  notification: notificationRMqClientModuleConfig,
-  integration: integrationGrpcClientModuleConfig,
-} as const;
-
-export type ClientModule = keyof typeof clientModules;
+import { ClientKeys, clientModules } from './module-config';
 
 export interface MicroserviceClientModuleRegisterOptions {
-  clients: ClientModule[];
+  clients: ClientKeys[];
 }
 
+@Global()
 @Module({
   controllers: [],
   providers: [],
@@ -32,9 +21,12 @@ export class MicroserviceClientModule {
     clients,
   }: MicroserviceClientModuleRegisterOptions): DynamicModule {
     const clientModuleConfigs: ClientsModuleAsyncOptions = [];
-    clients.forEach((client) =>
-      clientModuleConfigs.push(clientModules[client])
-    );
+    let providers: Provider[] = [];
+    clients.forEach((client) => {
+      const clientOptions = clientModules[client];
+      clientModuleConfigs.push(clientOptions.moduleConfig);
+      providers = providers.concat(clientOptions.providers);
+    });
 
     return {
       module: MicroserviceClientModule,
@@ -42,7 +34,8 @@ export class MicroserviceClientModule {
         ConfigModule.forRoot({ isGlobal: true }),
         ClientsModule.registerAsync(clientModuleConfigs),
       ],
-      exports: [ClientsModule.registerAsync(clientModuleConfigs)],
+      providers,
+      exports: [ClientsModule.registerAsync(clientModuleConfigs), ...providers],
     };
   }
 }

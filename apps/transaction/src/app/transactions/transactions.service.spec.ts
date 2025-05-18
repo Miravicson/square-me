@@ -6,7 +6,7 @@ import { ForexTransaction } from '../../typeorm/models/forex-transaction.model';
 import { ForexOrder } from '../../typeorm/models/forex-order.model';
 import { DataSource } from 'typeorm';
 import { RetryOrderProducer } from './retry-order.producer';
-import { NOTIFICATION_CLIENT } from '@square-me/microservice-client';
+import { NotificationService } from '@square-me/microservice-client';
 import { paginate } from 'nestjs-typeorm-paginate';
 
 import Decimal from 'decimal.js';
@@ -20,7 +20,7 @@ describe('TransactionsService', () => {
   let service: TransactionsService;
   let walletClient: any;
   let integrationClient: any;
-  let notificationClient: any;
+  let notificationService: any;
   let forexTxnRepo: any;
   let forexOrderRepo: any;
   let retryOrderProducer: any;
@@ -33,8 +33,8 @@ describe('TransactionsService', () => {
     integrationClient = {
       getService: jest.fn(),
     };
-    notificationClient = {
-      emit: jest.fn(),
+    notificationService = {
+      notifyUser: jest.fn(),
     };
     forexTxnRepo = {
       save: jest.fn(),
@@ -60,7 +60,7 @@ describe('TransactionsService', () => {
         TransactionsService,
         { provide: Packages.WALLET, useValue: walletClient },
         { provide: Packages.INTEGRATION, useValue: integrationClient },
-        { provide: NOTIFICATION_CLIENT, useValue: notificationClient },
+        { provide: NotificationService, useValue: notificationService },
         {
           provide: getRepositoryToken(ForexTransaction),
           useValue: forexTxnRepo,
